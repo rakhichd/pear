@@ -110,9 +110,9 @@ export default function UploadResume() {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-8">
-          <h1 className="text-3xl font-bold mb-6 text-gray-900">Upload Your Resume</h1>
+          <h1 className="text-3xl font-bold mb-6 text-gray-900">Upload Your Succesful Resume</h1>
           <p className="text-gray-600 mb-8">
-            Share your successful resume to help others in their job search journey.
+            Share your resume to help others in their job search journey.
           </p>
 
           {error && (

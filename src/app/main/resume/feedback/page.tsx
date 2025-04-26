@@ -11,6 +11,8 @@ export default function ResumeFeedback() {
   const [fileName, setFileName] = useState('');
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedbackId, setFeedbackId] = useState<string | null>(null);
+  const [resumeFilePath, setResumeFilePath] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     targetRole: '',
     targetCompany: '',
@@ -85,6 +87,8 @@ export default function ResumeFeedback() {
       
       const data = await response.json();
       setFeedback(data.feedback);
+      setFeedbackId(data.feedbackId);
+      setResumeFilePath(data.filePath);
       
     } catch (err) {
       console.error('Error getting resume feedback:', err);
@@ -128,6 +132,15 @@ export default function ResumeFeedback() {
             </div>
 
             <div className="p-6">
+              {resumeFilePath && (
+                <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+                  <h3 className="text-lg font-bold mb-2">Your Uploaded Resume</h3>
+                  <div className="w-full h-96 border border-gray-300 rounded-md overflow-hidden">
+                    <iframe src={`/data${resumeFilePath}`} className="w-full h-full"></iframe>
+                  </div>
+                </div>
+              )}
+              
               <div className="prose max-w-none">
                 {feedback.split('\n').map((paragraph, index) => (
                   <p key={index} className="mb-4">{paragraph}</p>
@@ -140,13 +153,26 @@ export default function ResumeFeedback() {
                 <p className="text-gray-600 text-sm">
                   Want more personalized feedback? Share your resume with our community for more insights.
                 </p>
-                <Link
-                  href="/main/resume/upload"
-                  className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
-                >
-                  <PaperAirplaneIcon className="h-4 w-4 mr-2" />
-                  Share Your Resume
-                </Link>
+                <div className="flex space-x-2">
+                  {resumeFilePath && (
+                    <a
+                      href={`/data${resumeFilePath}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition"
+                    >
+                      <DocumentTextIcon className="h-4 w-4 mr-2" />
+                      View Resume
+                    </a>
+                  )}
+                  <Link
+                    href="/main/resume/upload"
+                    className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
+                  >
+                    <PaperAirplaneIcon className="h-4 w-4 mr-2" />
+                    Share Your Resume
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

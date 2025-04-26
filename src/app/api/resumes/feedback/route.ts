@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 export const config = {
   api: {
@@ -28,26 +29,54 @@ export async function POST(request: NextRequest) {
     // Generate a unique ID for this feedback request
     const feedbackId = crypto.randomUUID();
     
-    // Store the resume file for analysis
+    // Get file buffer from the File object
     const fileBuffer = await file.arrayBuffer();
-    const storage = getStorage();
-    const storageRef = ref(storage, `feedback-requests/${feedbackId}/${file.name}`);
-    
-    await uploadBytesResumable(storageRef, new Uint8Array(fileBuffer));
-    const downloadURL = await getDownloadURL(storageRef);
 
-    // In a real application, you would:
-    // 1. Extract text from the PDF
-    // 2. Analyze it using an ML model or send to an API
-    // 3. Generate feedback based on target role, career level, etc.
+    // Define the local path where the file will be saved
+    const dataDir = path.join(process.cwd(), 'data', 'feedback');
+    const feedbackDir = path.join(dataDir, feedbackId);
     
+    // Create directories if they don't exist
+    try {
+      await fs.mkdir(dataDir, { recursive: true });
+      await fs.mkdir(feedbackDir, { recursive: true });
+    } catch (dirError) {
+      console.error('Error creating directories:', dirError);
+      throw new Error('Failed to create directories for feedback storage');
+    }
+    
+    // Save the file to the local filesystem
+    const filePath = path.join(feedbackDir, file.name);
+    await fs.writeFile(filePath, Buffer.from(fileBuffer));
+    
+    // Store metadata in a JSON file
+    const feedbackData = {
+      id: feedbackId,
+      fileName: file.name,
+      filePath: filePath.replace(process.cwd(), ''),
+      targetRole,
+      targetCompany,
+      careerLevel,
+      additionalContext,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Save the metadata to a JSON file
+    const metadataPath = path.join(feedbackDir, 'metadata.json');
+    await fs.writeFile(metadataPath, JSON.stringify(feedbackData, null, 2));
+
     // For this example, we'll provide mock feedback
     const feedback = generateMockFeedback(targetRole, careerLevel, targetCompany, additionalContext);
+    
+    // Save the feedback to a file
+    const feedbackPath = path.join(feedbackDir, 'feedback.md');
+    await fs.writeFile(feedbackPath, feedback);
 
     return NextResponse.json({
       success: true,
       feedbackId,
       feedback,
+      filePath: filePath.replace(process.cwd(), ''),
     });
   } catch (error) {
     console.error('Error processing resume feedback:', error);

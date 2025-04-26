@@ -4,11 +4,16 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeftIcon, StarIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
-import { getCurrentUserId, getUserDisplayName, getUserEmail } from "@/utils/auth-helpers";
+import { 
+  isLoggedIn,
+  getCurrentUserId, 
+  getUserDisplayName, 
+  getUserEmail,
+  getUserCreationDate,
+  signOut
+} from "@/utils/auth-helpers";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
@@ -18,25 +23,21 @@ export default function ProfilePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check authentication state
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        fetchSavedResumes(currentUser.uid);
-      } else {
-        // For demo purposes, use a consistent demo user ID instead of redirecting
-        const demoUserId = getCurrentUserId();
-        setUser({ 
-          displayName: getUserDisplayName(),
-          email: getUserEmail(),
-          uid: demoUserId,
-          metadata: { creationTime: new Date().toISOString() }
-        });
-        fetchSavedResumes(demoUserId);
-      }
-    });
-
-    return () => unsubscribe();
+    // Check if the user is logged in using our dummy auth
+    if (isLoggedIn()) {
+      // Create a mock user object using our auth helpers
+      const userId = getCurrentUserId();
+      setUser({ 
+        displayName: getUserDisplayName(),
+        email: getUserEmail(),
+        uid: userId,
+        metadata: { creationTime: getUserCreationDate().toISOString() }
+      });
+      fetchSavedResumes(userId);
+    } else {
+      // Redirect to login if not authenticated
+      router.push('/auth/login');
+    }
   }, [router]);
 
   // Fetch saved resumes for the authenticated user
@@ -124,7 +125,10 @@ export default function ProfilePage() {
                         Search Resumes
                       </Link>
                       <button
-                        onClick={() => auth.signOut().then(() => router.push("/auth/login"))}
+                        onClick={() => {
+                          signOut();
+                          router.push("/auth/login");
+                        }}
                         className="text-sm px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
                       >
                         Sign Out

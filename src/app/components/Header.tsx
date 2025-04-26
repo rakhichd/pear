@@ -2,36 +2,41 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
 import { UserCircleIcon } from "@heroicons/react/24/outline";
-import { getCurrentUserId, getUserDisplayName } from "@/utils/auth-helpers";
+import { isLoggedIn, getUserDisplayName, signOut } from "@/utils/auth-helpers";
 
 export default function Header() {
-  const [user, setUser] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Check auth status on component mount and when localStorage changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    // Function to check auth status
+    const checkAuthStatus = () => {
+      setIsAuthenticated(isLoggedIn());
       setLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
+    // Check auth status initially
+    checkAuthStatus();
+
+    // Listen for storage events (in case another tab logs in/out)
+    const handleStorageChange = () => {
+      checkAuthStatus();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
-  const handleSignOut = async () => {
-    try {
-      // Clear local storage first
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('userEmail');
-      }
-      
-      // Then sign out from Firebase
-      await auth.signOut();
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
+  const handleSignOut = () => {
+    signOut();
+    setIsAuthenticated(false);
+    
+    // Redirect to home or login page
+    window.location.href = '/auth/login';
   };
 
   return (
@@ -45,7 +50,7 @@ export default function Header() {
           <div className="animate-pulse bg-gray-200 h-8 w-32 rounded"></div>
         ) : (
           <div className="flex gap-4 items-center">
-            {user ? (
+            {isAuthenticated ? (
               <>
                 <Link href="/main/search" className="text-gray-600 hover:text-gray-900">
                   Search
@@ -64,7 +69,7 @@ export default function Header() {
                   className="flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition"
                 >
                   <UserCircleIcon className="h-5 w-5" />
-                  Profile
+                  {getUserDisplayName()}
                 </Link>
               </>
             ) : (

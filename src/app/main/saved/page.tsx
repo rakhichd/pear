@@ -4,11 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeftIcon, StarIcon } from "@heroicons/react/24/outline";
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
-import { getCurrentUserId } from "@/utils/auth-helpers";
+import { getCurrentUserId, isLoggedIn } from "@/utils/auth-helpers";
 
 export default function SavedResumesPage() {
   const [user, setUser] = useState<any>(null);
@@ -18,30 +16,22 @@ export default function SavedResumesPage() {
   const router = useRouter();
   
   // Use a consistent userId for demo purposes
-  const [userId, setUserId] = useState(() => getCurrentUserId());
+  const [userId] = useState(() => getCurrentUserId());
 
   useEffect(() => {
-    // Check authentication state
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        setUserId(currentUser.uid);
-      } else {
-        // Always use a demo ID for testing
-        setUserId(getCurrentUserId());
-      }
-
-      // Fetch saved resumes regardless of authentication status
+    // Check if the user is logged in
+    if (isLoggedIn()) {
+      // Fetch saved resumes
       fetchSavedResumes();
-    });
-
-    return () => unsubscribe();
+    } else {
+      // Redirect to login if needed
+      // Uncomment the next line if you want to require login for saved resumes
+      // router.push('/auth/login');
+      
+      // For demo purposes, still fetch resumes with demo ID
+      fetchSavedResumes();
+    }
   }, []);
-  
-  // Refetch when userId changes
-  useEffect(() => {
-    fetchSavedResumes();
-  }, [userId]);
 
   // Fetch saved resumes
   const fetchSavedResumes = async () => {

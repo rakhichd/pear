@@ -4,9 +4,8 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { isLoggedIn } from '@/utils/auth-helpers';
 
 type LoginFormValues = {
   email: string;
@@ -20,14 +19,10 @@ export default function LoginPage() {
   
   // Check if user is already logged in
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // Redirect to profile page if already logged in
-        router.push('/main/profile');
-      }
-    });
-    
-    return () => unsubscribe();
+    if (isLoggedIn()) {
+      // Redirect to profile page if already logged in
+      router.push('/main/profile');
+    }
   }, [router]);
   
   const {
@@ -44,26 +39,19 @@ export default function LoginPage() {
       // Simulate loading time to make it feel realistic
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Create a dummy user session using Firebase's signInWithCustomToken
-      // but we'll use a trick to avoid needing an actual token
-      const { signInAnonymously, updateProfile } = await import('firebase/auth');
-      
-      // Sign in anonymously
-      const result = await signInAnonymously(auth);
-      
-      // Update the anonymous user with the email from the form
-      if (result.user) {
-        await updateProfile(result.user, {
-          displayName: data.email.split('@')[0], // Use first part of email as name
-        });
-        
-        // Store the email in localStorage to display it
+      // Store user information in localStorage for demo purposes
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('dummyAuth', 'true');
         localStorage.setItem('userEmail', data.email);
-        
-        console.log('Successfully logged in with dummy account:', result.user);
+        localStorage.setItem('userName', data.email.split('@')[0]);
+        localStorage.setItem('userId', 'demo-user-' + Math.floor(Math.random() * 1000));
+        localStorage.setItem('userCreated', new Date().toISOString());
       }
       
-      // Redirect will be handled by useEffect
+      console.log('Successfully logged in with dummy account');
+      
+      // Manually redirect to profile page
+      router.push('/main/profile');
     } catch (err: any) {
       console.error('Login error:', err);
       setError('An error occurred. Please refresh and try again.');

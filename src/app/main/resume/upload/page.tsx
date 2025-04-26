@@ -69,12 +69,7 @@ export default function UploadResume() {
       // 1. Upload the file and metadata using FormData
       const formDataToSend = new FormData();
       formDataToSend.append('file', file);
-      formDataToSend.append('title', formData.title);
       formDataToSend.append('role', formData.role);
-      formDataToSend.append('company', formData.company || '');
-      formDataToSend.append('experiences', formData.experiences || '');
-      formDataToSend.append('education', formData.education || '');
-      formDataToSend.append('skills', formData.skills);
       formDataToSend.append('result', formData.result);
       
       // 2. Send the data to our API
@@ -127,20 +122,6 @@ export default function UploadResume() {
           )}
 
           <form onSubmit={handleSubmit}>
-            <div className="mb-6">
-              <label className="block text-gray-700 font-medium mb-2">
-                Resume Title *
-              </label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="E.g., Software Engineer Resume that got offers from Google and Meta"
-                required
-              />
-            </div>
 
             <div className="mb-6">
               <label className="block text-gray-700 font-medium mb-2">
@@ -186,62 +167,6 @@ export default function UploadResume() {
                   required
                 />
               </div>
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Company/Target Companies
-                </label>
-                <input
-                  type="text"
-                  name="company"
-                  value={formData.company}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="E.g., Google, Meta, Amazon"
-                />
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-gray-700 font-medium mb-2">
-                Skills (comma-separated) *
-              </label>
-              <input
-                type="text"
-                name="skills"
-                value={formData.skills}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="E.g., React, Python, Project Management, Data Analysis"
-                required
-              />
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-gray-700 font-medium mb-2">
-                Previous Experiences (brief summary)
-              </label>
-              <textarea
-                name="experiences"
-                value={formData.experiences}
-                onChange={handleInputChange}
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Briefly describe your relevant work experiences"
-              />
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-gray-700 font-medium mb-2">
-                Education
-              </label>
-              <textarea
-                name="education"
-                value={formData.education}
-                onChange={handleInputChange}
-                rows={2}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Briefly describe your educational background"
-              />
             </div>
 
             <div className="mb-6">

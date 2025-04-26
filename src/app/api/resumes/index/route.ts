@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { indexResume } from '@/lib/pinecone';
-import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { promises as fs } from 'fs';
+import path from 'path';
 import { prepareResumeTextForEmbedding, truncateText } from '@/utils/textProcessing';
 
 // API route for indexing a resume in the vector database
@@ -17,18 +17,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Fetch the resume data from Firestore
-    const resumeRef = doc(db, 'resumes', resumeId);
-    const resumeSnap = await getDoc(resumeRef);
-
-    if (!resumeSnap.exists()) {
+    // 1. Fetch the resume data from local file system
+    const dataDir = path.join(process.cwd(), 'data', 'resumes');
+    const metadataPath = path.join(dataDir, resumeId, 'metadata.json');
+    
+    let resumeData;
+    try {
+      const fileContent = await fs.readFile(metadataPath, 'utf-8');
+      resumeData = JSON.parse(fileContent);
+    } catch (err) {
       return NextResponse.json(
         { error: 'Resume not found' },
         { status: 404 }
       );
     }
-
-    const resumeData = resumeSnap.data();
 
     // 2. Process resume data to prepare for embedding
     let resumeText = prepareResumeTextForEmbedding(resumeData);
@@ -66,8 +68,9 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    // Delete the resume from Pinecone
-    const result = await fetch(`/api/resumes/${resumeId}/index`, {
+    // Delete the resume from Pinecone using the correct absolute URL
+    const { origin } = new URL(request.url);
+    const result = await fetch(`${origin}/api/resumes/${resumeId}/index`, {
       method: 'DELETE',
     });
 
@@ -75,9 +78,31 @@ export async function DELETE(request: NextRequest) {
       throw new Error('Failed to delete resume from index');
     }
 
+    // Remove the resume from the processed_data.json file
+    const dataDir = path.join(process.cwd(), 'data', 'resumes');
+    const processedDataPath = path.join(dataDir, 'processed_data.json');
+    
+    try {
+      const fileContent = await fs.readFile(processedDataPath, 'utf-8');
+      let allResumes = JSON.parse(fileContent);
+      
+      // Filter out the deleted resume
+      allResumes = allResumes.filter((resume: any) => resume.id !== resumeId);
+      
+      // Write back the updated data
+      await fs.writeFile(processedDataPath, JSON.stringify(allResumes, null, 2));
+      
+      // Optionally, delete the resume directory
+      const resumeDir = path.join(dataDir, resumeId);
+      await fs.rm(resumeDir, { recursive: true, force: true });
+    } catch (err) {
+      console.error('Error updating processed_data.json:', err);
+      // Continue even if we couldn't update the file
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Resume removed from index',
+      message: 'Resume removed from index and local storage',
       resumeId
     });
   } catch (error) {

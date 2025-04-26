@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchResumes } from '@/lib/pinecone';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where, limit, doc, getDoc } from 'firebase/firestore';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,31 +44,45 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 2. Get actual resume data from Firestore using the matched IDs
+    // 2. Get actual resume data from local filesystem using the matched IDs
     try {
-      console.log('Search API: Attempting to fetch data from Firestore');
+      console.log('Search API: Attempting to fetch data from local filesystem');
       const resumeIds = searchResults.matches.map(match => match.id);
       console.log('Search API: Resume IDs:', resumeIds);
-      const resumesRef = collection(db, 'resumes');
+      const dataDir = path.join(process.cwd(), 'data', 'resumes');
       
       // Create an array to store resume data promises
-      const resumePromises = resumeIds.map(id => getDoc(doc(resumesRef, id)));
+      const resumePromises = resumeIds.map(async id => {
+        try {
+          const metadataPath = path.join(dataDir, id, 'metadata.json');
+          const fileContent = await fs.readFile(metadataPath, 'utf-8');
+          const data = JSON.parse(fileContent);
+          return {
+            exists: true,
+            id,
+            data
+          };
+        } catch (err) {
+          console.error(`Error reading resume file for ID ${id}:`, err);
+          return { exists: false, id };
+        }
+      });
+      
       const resumeDocs = await Promise.all(resumePromises);
       
       // Map the document snapshots to their data
       const resumes = resumeDocs
-        .filter(docSnap => docSnap.exists())
-        .map(docSnap => {
-          const data = docSnap.data();
+        .filter(doc => doc.exists)
+        .map(doc => {
           return {
-            id: docSnap.id,
-            ...data,
+            id: doc.id,
+            ...doc.data,
             // Add the match score from Pinecone
-            score: searchResults.matches.find(match => match.id === docSnap.id)?.score || 0
+            score: searchResults.matches.find(match => match.id === doc.id)?.score || 0
           };
         });
 
-      console.log(`Search API: Found ${resumes.length} resumes in Firestore`);
+      console.log(`Search API: Found ${resumes.length} resumes in local filesystem`);
       
       if (resumes.length > 0) {
         return NextResponse.json({
@@ -79,13 +93,13 @@ export async function POST(request: NextRequest) {
         });
       }
       
-      // If we didn't find any resumes in Firestore, fall back to Pinecone metadata
-      console.log('Search API: No matching resumes found in Firestore, falling back to Pinecone metadata');
-    } catch (firestoreError) {
-      console.error('Search API: Error fetching from Firestore:', firestoreError);
+      // If we didn't find any resumes in filesystem, fall back to Pinecone metadata
+      console.log('Search API: No matching resumes found in filesystem, falling back to Pinecone metadata');
+    } catch (filesystemError) {
+      console.error('Search API: Error fetching from filesystem:', filesystemError);
     }
     
-    // Fall back to just returning the IDs and scores if Firestore fails
+    // Fall back to just returning the IDs and scores if filesystem fails
     console.log('Search API: Falling back to Pinecone metadata only');
     return NextResponse.json({
       results: searchResults.matches.map(match => ({ 

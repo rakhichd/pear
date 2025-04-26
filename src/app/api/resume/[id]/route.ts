@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 export async function GET(
   request: NextRequest,
@@ -18,27 +18,26 @@ export async function GET(
     
     console.log(`Fetching resume with ID: ${resumeId}`);
     
-    // Fetch the resume from Firestore
-    const resumeRef = doc(db, 'resumes', resumeId);
-    const resumeSnap = await getDoc(resumeRef);
+    // Fetch the resume from local filesystem
+    const dataDir = path.join(process.cwd(), 'data', 'resumes');
+    const metadataPath = path.join(dataDir, resumeId, 'metadata.json');
     
-    if (!resumeSnap.exists()) {
-      // If resume doesn't exist in Firestore, check Pinecone metadata
+    let resumeData;
+    try {
+      const fileContent = await fs.readFile(metadataPath, 'utf-8');
+      resumeData = JSON.parse(fileContent);
+    } catch (err) {
+      console.error('Error reading resume file:', err);
       return NextResponse.json(
         { error: 'Resume not found' },
         { status: 404 }
       );
     }
     
-    // Format the resume data
-    const resumeData = {
-      id: resumeSnap.id,
-      ...resumeSnap.data(),
-      // Convert Firestore timestamp to ISO string if it exists
-      lastUpdated: resumeSnap.data().lastUpdated ? 
-        resumeSnap.data().lastUpdated.toDate().toISOString() : 
-        new Date().toISOString()
-    };
+    // Format the resume data (ensure lastUpdated is present)
+    if (!resumeData.lastUpdated) {
+      resumeData.lastUpdated = resumeData.updatedAt || new Date().toISOString();
+    }
     
     return NextResponse.json({ resume: resumeData });
   } catch (error: any) {

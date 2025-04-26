@@ -1,9 +1,11 @@
 "use client";
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 type LoginFormValues = {
@@ -16,6 +18,18 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   
+  // Check if user is already logged in
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Redirect to profile page if already logged in
+        router.push('/main/profile');
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [router]);
+  
   const {
     register,
     handleSubmit,
@@ -27,19 +41,22 @@ export default function LoginPage() {
     setError(null);
     
     try {
-      // This is a mockup implementation
-      // In a real application, you would use Firebase Authentication
+      // Use Firebase Authentication for sign in
+      const { signInWithEmailAndPassword } = await import('firebase/auth');
+      await signInWithEmailAndPassword(auth, data.email, data.password);
       
-      console.log('Logging in with:', data);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Redirect to the main page after successful login
-      router.push('/main/search');
-    } catch (err) {
+      // No need to redirect here, the useEffect above will handle it
+    } catch (err: any) {
       console.error('Login error:', err);
-      setError('Invalid email or password. Please try again.');
+      
+      // Provide more specific error messages based on Firebase error codes
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError('Invalid email or password. Please try again.');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Too many failed login attempts. Please try again later.');
+      } else {
+        setError('An error occurred. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

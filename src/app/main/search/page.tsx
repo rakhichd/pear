@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon } from "@heroicons/react/24/outline";
 import { processSearchQuery } from "@/utils/textProcessing";
+import Header from "@/app/components/Header";
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -127,24 +128,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold text-indigo-600">
-            ResumeFind
-          </Link>
-          <div className="flex gap-4">
-            <Link href="/auth/login" className="text-gray-600 hover:text-gray-900">
-              Log in
-            </Link>
-            <Link 
-              href="/auth/signup"
-              className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition"
-            >
-              Sign up
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Search Bar */}

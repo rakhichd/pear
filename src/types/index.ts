@@ -19,6 +19,8 @@ export type ResumeData = {
   companies: string[];
   educationLevel: 'high-school' | 'associate' | 'bachelor' | 'master' | 'phd';
   formattingStyle?: 'professional' | 'creative' | 'minimalist';
+  pdfUrl?: string;
+  pdfFilename?: string;
 };
 
 export type UserData = {

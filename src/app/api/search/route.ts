@@ -15,52 +15,61 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Search Pinecone for semantic matches
+    // 1. Search Pinecone for semantic matches using embeddings
     const searchResults = await searchResumes(searchQuery, filters, pageSize);
     
-    // 2. Get actual resume data from Firestore
-    // In a real implementation, this would fetch the full data for the matched IDs
-    
-    // Mock implementation
-    const mockResumes = [
-      {
-        id: '1',
-        title: "Software Engineer Resume",
-        skills: ["React", "TypeScript", "Node.js"],
-        education: "CS Degree, Berkeley",
-        experience: "2-5 years",
-        companies: ["Google", "Microsoft"],
-        blurPreview: true,
-        lastUpdated: "December 2023"
-      },
-      {
-        id: '2',
-        title: "Product Manager Resume",
-        skills: ["Product Strategy", "User Research", "Roadmapping"],
-        education: "MBA, Stanford",
-        experience: "3-7 years",
-        companies: ["Apple", "Meta"],
-        blurPreview: false,
-        lastUpdated: "January 2024"
-      },
-      {
-        id: '3',
-        title: "Data Scientist Resume",
-        skills: ["Python", "Machine Learning", "SQL"],
-        education: "Statistics, MIT",
-        experience: "1-3 years",
-        companies: ["Amazon", "Netflix"],
-        blurPreview: true,
-        lastUpdated: "February 2024"
-      },
-    ];
+    if (!searchResults.matches || searchResults.matches.length === 0) {
+      return NextResponse.json({
+        results: [],
+        page,
+        totalPages: 0,
+        totalResults: 0,
+      });
+    }
 
-    return NextResponse.json({
-      results: mockResumes,
-      page,
-      totalPages: 1,
-      totalResults: mockResumes.length,
-    });
+    // 2. Get actual resume data from Firestore using the matched IDs
+    try {
+      const resumeIds = searchResults.matches.map(match => match.id);
+      const resumesRef = collection(db, 'resumes');
+      
+      // Create an array to store resume data promises
+      const resumePromises = resumeIds.map(id => getDoc(doc(resumesRef, id)));
+      const resumeDocs = await Promise.all(resumePromises);
+      
+      // Map the document snapshots to their data
+      const resumes = resumeDocs
+        .filter(docSnap => docSnap.exists())
+        .map(docSnap => {
+          const data = docSnap.data();
+          return {
+            id: docSnap.id,
+            ...data,
+            // Add the match score from Pinecone
+            score: searchResults.matches.find(match => match.id === docSnap.id)?.score || 0
+          };
+        });
+
+      return NextResponse.json({
+        results: resumes,
+        page,
+        totalPages: Math.ceil(resumes.length / pageSize),
+        totalResults: resumes.length,
+      });
+    } catch (firestoreError) {
+      console.error('Error fetching resume data from Firestore:', firestoreError);
+      
+      // Fall back to just returning the IDs and scores if Firestore fails
+      return NextResponse.json({
+        results: searchResults.matches.map(match => ({ 
+          id: match.id,
+          score: match.score,
+          metadata: match.metadata
+        })),
+        page,
+        totalPages: 1,
+        totalResults: searchResults.matches.length,
+      });
+    }
   } catch (error) {
     console.error('Search API error:', error);
     return NextResponse.json(

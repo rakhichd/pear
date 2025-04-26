@@ -31,7 +31,7 @@ async function getModel(): Promise<use.UniversalSentenceEncoder> {
         modelUrl: 'https://tfhub.dev/tensorflow/tfjs-model/universal-sentence-encoder-lite/1/default/1'
       });
     } else {
-      console.log('Loading full Universal Sentence Encoder model');
+      console.log('Loading standard Universal Sentence Encoder model (will pad to 1024 dimensions)');
       model = await use.load();
     }
     
@@ -57,7 +57,18 @@ export async function generateEmbedding(text: string): Promise<Float32Array> {
     const data = await embeddings.array();
     embeddings.dispose(); // Clean up tensor
     
-    return new Float32Array(data[0]);
+    // Get the raw embedding vector
+    const vector = new Float32Array(data[0]);
+    
+    // Pad or truncate to match 1024 dimensions for Pinecone
+    const paddedVector = new Float32Array(1024);
+    
+    // Copy values up to the minimum of original length and 1024
+    for (let i = 0; i < Math.min(vector.length, 1024); i++) {
+      paddedVector[i] = vector[i];
+    }
+    
+    return paddedVector;
   } catch (error) {
     console.error('Error generating embeddings:', error);
     throw error;
@@ -81,7 +92,17 @@ export async function generateEmbeddings(texts: string[]): Promise<Float32Array[
     const data = await embeddings.array();
     embeddings.dispose(); // Clean up tensor
     
-    return data.map(vector => new Float32Array(vector));
+    // Process each vector to ensure 1024 dimensions
+    return data.map(vector => {
+      const paddedVector = new Float32Array(1024);
+      
+      // Copy values up to the minimum of original length and 1024
+      for (let i = 0; i < Math.min(vector.length, 1024); i++) {
+        paddedVector[i] = vector[i];
+      }
+      
+      return paddedVector;
+    });
   } catch (error) {
     console.error('Error generating embeddings for multiple texts:', error);
     throw error;

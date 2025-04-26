@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { UserCircleIcon } from "@heroicons/react/24/outline";
+import { getCurrentUserId, getUserDisplayName } from "@/utils/auth-helpers";
 
 export default function Header() {
   const [user, setUser] = useState<any>(null);
@@ -21,6 +22,12 @@ export default function Header() {
 
   const handleSignOut = async () => {
     try {
+      // Clear local storage first
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('userEmail');
+      }
+      
+      // Then sign out from Firebase
       await auth.signOut();
     } catch (error) {
       console.error("Error signing out:", error);

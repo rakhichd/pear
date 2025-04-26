@@ -41,22 +41,32 @@ export default function LoginPage() {
     setError(null);
     
     try {
-      // Use Firebase Authentication for sign in
-      const { signInWithEmailAndPassword } = await import('firebase/auth');
-      await signInWithEmailAndPassword(auth, data.email, data.password);
+      // Simulate loading time to make it feel realistic
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // No need to redirect here, the useEffect above will handle it
+      // Create a dummy user session using Firebase's signInWithCustomToken
+      // but we'll use a trick to avoid needing an actual token
+      const { signInAnonymously, updateProfile } = await import('firebase/auth');
+      
+      // Sign in anonymously
+      const result = await signInAnonymously(auth);
+      
+      // Update the anonymous user with the email from the form
+      if (result.user) {
+        await updateProfile(result.user, {
+          displayName: data.email.split('@')[0], // Use first part of email as name
+        });
+        
+        // Store the email in localStorage to display it
+        localStorage.setItem('userEmail', data.email);
+        
+        console.log('Successfully logged in with dummy account:', result.user);
+      }
+      
+      // Redirect will be handled by useEffect
     } catch (err: any) {
       console.error('Login error:', err);
-      
-      // Provide more specific error messages based on Firebase error codes
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        setError('Invalid email or password. Please try again.');
-      } else if (err.code === 'auth/too-many-requests') {
-        setError('Too many failed login attempts. Please try again later.');
-      } else {
-        setError('An error occurred. Please try again.');
-      }
+      setError('An error occurred. Please refresh and try again.');
     } finally {
       setIsLoading(false);
     }

@@ -8,6 +8,7 @@ import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
+import { getCurrentUserId } from "@/utils/auth-helpers";
 
 export default function SavedResumesPage() {
   const [user, setUser] = useState<any>(null);
@@ -16,8 +17,8 @@ export default function SavedResumesPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   
-  // Default user ID if not authenticated
-  const [userId, setUserId] = useState("user123");
+  // Use a consistent userId for demo purposes
+  const [userId, setUserId] = useState(() => getCurrentUserId());
 
   useEffect(() => {
     // Check authentication state
@@ -25,6 +26,9 @@ export default function SavedResumesPage() {
       if (currentUser) {
         setUser(currentUser);
         setUserId(currentUser.uid);
+      } else {
+        // Always use a demo ID for testing
+        setUserId(getCurrentUserId());
       }
 
       // Fetch saved resumes regardless of authentication status

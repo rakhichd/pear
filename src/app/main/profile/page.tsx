@@ -8,6 +8,7 @@ import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
+import { getCurrentUserId, getUserDisplayName, getUserEmail } from "@/utils/auth-helpers";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
@@ -23,8 +24,15 @@ export default function ProfilePage() {
         setUser(currentUser);
         fetchSavedResumes(currentUser.uid);
       } else {
-        // Redirect to login page if not authenticated
-        router.push("/auth/login");
+        // For demo purposes, use a consistent demo user ID instead of redirecting
+        const demoUserId = getCurrentUserId();
+        setUser({ 
+          displayName: getUserDisplayName(),
+          email: getUserEmail(),
+          uid: demoUserId,
+          metadata: { creationTime: new Date().toISOString() }
+        });
+        fetchSavedResumes(demoUserId);
       }
     });
 
@@ -105,9 +113,9 @@ export default function ProfilePage() {
                     <UserCircleIcon className="h-16 w-16 text-indigo-600" />
                   </div>
                   <div className="text-center sm:text-left">
-                    <h2 className="text-xl font-semibold">{user?.displayName || user?.email || "User"}</h2>
-                    <p className="text-gray-600">{user?.email}</p>
-                    <p className="text-gray-500 text-sm mt-1">Member since {user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : "N/A"}</p>
+                    <h2 className="text-xl font-semibold">{user?.displayName || getUserDisplayName()}</h2>
+                    <p className="text-gray-600">{user?.email || getUserEmail()}</p>
+                    <p className="text-gray-500 text-sm mt-1">Member since {user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : new Date().toLocaleDateString()}</p>
                     <div className="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
                       <Link 
                         href="/main/search"

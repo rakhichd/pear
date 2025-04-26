@@ -1,76 +1,90 @@
 import * as tf from '@tensorflow/tfjs';
 import * as use from '@tensorflow-models/universal-sentence-encoder';
 
-// Initialize model - lazy loading pattern
-let model: use.UniversalSentenceEncoder | null = null;
+// Cache the model to avoid reloading it for each query
+let modelPromise: Promise<use.UniversalSentenceEncoder> | null = null;
 
 /**
- * Loads the Universal Sentence Encoder model if not already loaded
+ * Loads the Universal Sentence Encoder model
+ * We use a singleton pattern to avoid loading the model multiple times
  */
-async function getModel(): Promise<use.UniversalSentenceEncoder> {
-  if (!model) {
-    // Configure TensorFlow.js for optimal performance
-    const useWebGL = process.env.NEXT_PUBLIC_TFJS_USE_WEBGL === 'true';
-    const useLiteModel = process.env.NEXT_PUBLIC_USE_LITE_MODEL === 'true';
+export async function loadModel(): Promise<use.UniversalSentenceEncoder> {
+  if (!modelPromise) {
+    console.log('Embeddings: Loading USE model for the first time');
     
-    // Set backend based on environment setting
-    if (useWebGL && typeof window !== 'undefined') {
-      console.log('Using WebGL backend for TensorFlow.js');
-      await tf.setBackend('webgl');
+    // Check if we're running on the server or client
+    if (typeof window === 'undefined') {
+      // Server-side: we would use Node.js version, but will skip for browser compatibility
+      console.log('Embeddings: Running on server-side');
     } else {
-      console.log('Using CPU backend for TensorFlow.js');
-      await tf.setBackend('cpu');
+      // Client-side: initialize tfjs for browser
+      console.log('Embeddings: Running on client-side');
+      await tf.ready();
+      console.log('Embeddings: TensorFlow.js initialized in browser');
     }
     
-    // Load the model. Users of Universal Sentence Encoder often
-    // have higher accuracy with the larger model, but the smaller
-    // model is faster for deployment.
-    if (useLiteModel) {
-      console.log('Loading lite Universal Sentence Encoder model');
-      model = await use.load({
-        modelUrl: 'https://tfhub.dev/tensorflow/tfjs-model/universal-sentence-encoder-lite/1/default/1'
-      });
-    } else {
-      console.log('Loading standard Universal Sentence Encoder model (will pad to 1024 dimensions)');
-      model = await use.load();
-    }
-    
-    console.log('Universal Sentence Encoder model loaded successfully');
+    // Load the model
+    console.log('Embeddings: Starting model load');
+    modelPromise = use.load();
+    modelPromise.then(() => {
+      console.log('Embeddings: Model loaded successfully');
+    }).catch(err => {
+      console.error('Embeddings: Error loading model:', err);
+      modelPromise = null; // Reset so we can try again
+    });
+  } else {
+    console.log('Embeddings: Using cached model');
   }
-  return model;
+  
+  return modelPromise;
 }
 
 /**
- * Generates embeddings for a single text query
- * @param text The text to generate embeddings for
- * @returns A Float32Array of the embedding vector
+ * Generates an embedding vector for the provided text
+ * @param text Text to embed
+ * @returns Float32Array of embedding values
  */
 export async function generateEmbedding(text: string): Promise<Float32Array> {
+  console.log('Embeddings: Generating embedding for text:', text.substring(0, 50) + '...');
+  
+  if (!text) {
+    console.error('Embeddings: No text provided for embedding');
+    throw new Error('No text provided for embedding');
+  }
+  
   try {
-    // Ensure model is loaded
-    const model = await getModel();
+    // Load the model
+    console.log('Embeddings: Loading model');
+    const model = await loadModel();
+    console.log('Embeddings: Model loaded, generating embedding');
     
     // Generate embeddings
     const embeddings = await model.embed(text);
+    console.log('Embeddings: Raw embedding generated');
     
-    // Extract the data and convert to Float32Array
-    const data = await embeddings.array();
-    embeddings.dispose(); // Clean up tensor
+    const embeddingArray = await embeddings.array();
+    console.log('Embeddings: Converted to array');
     
-    // Get the raw embedding vector
-    const vector = new Float32Array(data[0]);
+    // Clean up tensor to prevent memory leaks
+    embeddings.dispose();
     
-    // Pad or truncate to match 1024 dimensions for Pinecone
-    const paddedVector = new Float32Array(1024);
+    // Process the result - we need to return a Float32Array
+    // The model returns a 2D array, but we only need the first (and only) element
+    const resultArray = new Float32Array(embeddingArray[0]);
+    console.log(`Embeddings: Result array length: ${resultArray.length}`);
     
-    // Copy values up to the minimum of original length and 1024
-    for (let i = 0; i < Math.min(vector.length, 1024); i++) {
-      paddedVector[i] = vector[i];
+    // Pad to 1024 dimensions if needed (Pinecone requirement)
+    if (resultArray.length < 1024) {
+      console.log(`Embeddings: Padding array from ${resultArray.length} to 1024 dimensions`);
+      const paddedArray = new Float32Array(1024).fill(0);
+      paddedArray.set(resultArray);
+      return paddedArray;
     }
     
-    return paddedVector;
+    console.log('Embeddings: Generated successfully');
+    return resultArray;
   } catch (error) {
-    console.error('Error generating embeddings:', error);
+    console.error('Embeddings: Error generating embedding:', error);
     throw error;
   }
 }
@@ -83,7 +97,7 @@ export async function generateEmbedding(text: string): Promise<Float32Array> {
 export async function generateEmbeddings(texts: string[]): Promise<Float32Array[]> {
   try {
     // Ensure model is loaded
-    const model = await getModel();
+    const model = await loadModel();
     
     // Generate embeddings
     const embeddings = await model.embed(texts);

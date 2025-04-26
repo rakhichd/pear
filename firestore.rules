@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read access to all resumes
+    match /resumes/{resumeId} {
+      allow read: if true;
+      allow write: if true; // For testing only - restrict this in production
+    }
+    
+    // Default rules - restrict access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 

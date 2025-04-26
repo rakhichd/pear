@@ -33,8 +33,11 @@ export default function SearchPage() {
     setError(null);
     
     try {
+      console.log("Starting search with query:", searchQuery);
+      
       // Process the query text to make it suitable for embeddings
       const processedQuery = processSearchQuery(searchQuery);
+      console.log("Processed query:", processedQuery);
       
       // Prepare filter object for the API
       const filterPayload = Object.entries(filters).reduce((acc, [key, value]) => {
@@ -43,8 +46,10 @@ export default function SearchPage() {
         }
         return acc;
       }, {} as Record<string, any>);
+      console.log("Filter payload:", filterPayload);
       
       // Call the search API
+      console.log("Sending request to API");
       const response = await fetch('/api/search', {
         method: 'POST',
         headers: {
@@ -58,11 +63,14 @@ export default function SearchPage() {
         }),
       });
       
+      console.log("Response status:", response.status);
+      
       if (!response.ok) {
-        throw new Error('Search request failed');
+        throw new Error(`Search request failed with status ${response.status}`);
       }
       
       const data = await response.json();
+      console.log("Received data:", data);
       setResults(data.results || []);
     } catch (err) {
       console.error('Search error:', err);

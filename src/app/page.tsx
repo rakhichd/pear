@@ -2,10 +2,28 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { MagnifyingGlassIcon, Bars3Icon, XMarkIcon, ArrowUpTrayIcon, DocumentTextIcon, UserIcon } from "@heroicons/react/24/outline";
 
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
+
+  // Handle search submission
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      // Redirect to the search page with the query
+      router.push(`/simple-search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  // Handle key press for search input
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
@@ -127,8 +145,14 @@ export default function Home() {
                 type="text"
                 placeholder="Search by role, skills, company, background..."
                 className="flex-1 px-4 py-3 focus:outline-none text-gray-800"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
               />
-              <button className="bg-indigo-600 text-white px-6 py-3 font-medium hover:bg-indigo-700 transition">
+              <button 
+                className="bg-indigo-600 text-white px-6 py-3 font-medium hover:bg-indigo-700 transition"
+                onClick={handleSearch}
+              >
                 Search
               </button>
             </div>
@@ -136,10 +160,34 @@ export default function Home() {
 
           {/* Example Tags */}
           <div className="mt-6 flex flex-wrap justify-center gap-2">
-            <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm hover:bg-gray-200 cursor-pointer">Software Engineer</span>
-            <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm hover:bg-gray-200 cursor-pointer">Product Manager</span>
-            <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm hover:bg-gray-200 cursor-pointer">Data Scientist</span>
-            <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm hover:bg-gray-200 cursor-pointer">UI/UX Designer</span>
+            <span 
+              className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm hover:bg-gray-200 cursor-pointer"
+              onClick={() => {
+                setSearchQuery("Software Engineer");
+                handleSearch();
+              }}
+            >Software Engineer</span>
+            <span 
+              className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm hover:bg-gray-200 cursor-pointer"
+              onClick={() => {
+                setSearchQuery("Product Manager");
+                handleSearch();
+              }}
+            >Product Manager</span>
+            <span 
+              className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm hover:bg-gray-200 cursor-pointer"
+              onClick={() => {
+                setSearchQuery("Data Scientist");
+                handleSearch();
+              }}
+            >Data Scientist</span>
+            <span 
+              className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm hover:bg-gray-200 cursor-pointer"
+              onClick={() => {
+                setSearchQuery("UI/UX Designer");
+                handleSearch();
+              }}
+            >UI/UX Designer</span>
           </div>
         </div>
 

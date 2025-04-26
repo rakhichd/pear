@@ -254,23 +254,6 @@ export default function ResumeFeedback() {
           </div>
         )}
 
-        <div className="mt-12 bg-indigo-50 rounded-xl p-6">
-          <h3 className="text-lg font-semibold mb-3">Why Get Resume Feedback?</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <h4 className="font-medium mb-2">Stand Out to Recruiters</h4>
-              <p className="text-gray-600 text-sm">Learn how to highlight your achievements in a way that catches recruiters' attention.</p>
-            </div>
-            <div>
-              <h4 className="font-medium mb-2">Beat ATS Systems</h4>
-              <p className="text-gray-600 text-sm">Get tips on optimizing your resume for applicant tracking systems used by most companies.</p>
-            </div>
-            <div>
-              <h4 className="font-medium mb-2">Tailored to Your Goals</h4>
-              <p className="text-gray-600 text-sm">Receive personalized feedback based on your specific target role and career level.</p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

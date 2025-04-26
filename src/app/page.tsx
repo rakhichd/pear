@@ -1,32 +1,112 @@
+'use client';
+
 import Link from "next/link";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { useState } from "react";
+import { MagnifyingGlassIcon, Bars3Icon, XMarkIcon, ArrowUpTrayIcon, DocumentTextIcon, UserIcon } from "@heroicons/react/24/outline";
 
 export default function Home() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
+
+      {/* Sidebar overlay */}
+      <div 
+        className={`fixed inset-0 bg-gray-800 bg-opacity-75 z-50 transition-opacity duration-300 ${
+          sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setSidebarOpen(false)}
+      />
+      
+      {/* Sidebar */}
+      <div 
+        className={`fixed top-0 left-0 bottom-0 w-80 md:w-96 bg-white z-50 shadow-lg transform transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="p-6 md:p-8 h-full flex flex-col">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-bold text-indigo-600">ResumeFind</h2>
+            <button 
+              onClick={() => setSidebarOpen(false)}
+              className="p-2 rounded-md hover:bg-gray-100"
+            >
+              <XMarkIcon className="h-6 w-6 text-gray-500" />
+            </button>
+          </div>
+          
+          <div className="mb-8">
+            <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-4 px-3">Tools</h3>
+            <nav className="space-y-2">
+              <Link 
+                href="/main/resume/upload" 
+                className="flex items-center gap-3 p-3 rounded-md hover:bg-indigo-50 text-gray-700 hover:text-indigo-600 transition-colors"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <ArrowUpTrayIcon className="h-5 w-5" />
+                <span className="font-medium">Upload Resume</span>
+              </Link>
+              <Link 
+                href="/main/resume/feedback" 
+                className="flex items-center gap-3 p-3 rounded-md hover:bg-indigo-50 text-gray-700 hover:text-indigo-600 transition-colors"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <DocumentTextIcon className="h-5 w-5" />
+                <span className="font-medium">Get Resume Feedback</span>
+              </Link>
+            </nav>
+          </div>
+          
+          <div className="mt-auto">
+            <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-4 px-3">Account</h3>
+            <nav className="space-y-2">
+              <Link 
+                href="/auth/login" 
+                className="flex items-center gap-3 p-3 rounded-md hover:bg-indigo-50 text-gray-700 hover:text-indigo-600 transition-colors"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <UserIcon className="h-5 w-5" />
+                <span className="font-medium">Log in</span>
+              </Link>
+              <Link 
+                href="/auth/signup" 
+                className="flex items-center gap-3 p-3 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <span className="font-medium">Sign up</span>
+              </Link>
+            </nav>
+          </div>
+        </div>
+      </div>
+      
       <div className="container mx-auto px-4 py-12 max-w-7xl">
         {/* Header */}
         <header className="flex justify-between items-center mb-16">
           <h1 className="text-2xl font-bold text-indigo-600">ResumeFind</h1>
-          <div className="flex gap-4">
-            <Link 
-              href="/main/resume/upload"
-              className="px-4 py-2 rounded-md border border-indigo-600 text-indigo-600 hover:bg-indigo-50 transition"
+          {/* Menu button for both mobile and desktop */}
+          <div className="flex items-center gap-4">
+            <button 
+              className="p-2 rounded-md hover:bg-indigo-50"
+              onClick={() => setSidebarOpen(true)}
             >
-              Upload Resume
-            </Link>
-            <Link 
-              href="/auth/login"
-              className="px-4 py-2 rounded-md text-indigo-600 hover:bg-indigo-50 transition"
-            >
-              Log in
-            </Link>
-            <Link 
-              href="/auth/signup"
-              className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition"
-            >
-              Sign up
-            </Link>
+              <Bars3Icon className="h-6 w-6 text-indigo-600" />
+            </button>
+            {/* Authentication buttons always visible */}
+            <div className="flex gap-2">
+              <Link 
+                href="/auth/login"
+                className="px-4 py-2 rounded-md text-indigo-600 hover:bg-indigo-50 transition"
+              >
+                Log in
+              </Link>
+              <Link 
+                href="/auth/signup"
+                className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition"
+              >
+                Sign up
+              </Link>
+            </div>
           </div>
         </header>
 
@@ -95,18 +175,7 @@ export default function Home() {
             <p className="text-gray-600">Filter by skills, companies, roles, and experience level.</p>
           </div>
         </div>
-
-        {/* CTA Section - Resume Search */}
-        <div className="bg-indigo-600 text-white rounded-2xl p-8 mb-8 text-center">
-          <h3 className="text-2xl font-bold mb-4">Ready to improve your resume?</h3>
-          <p className="mb-6 max-w-2xl mx-auto">Join thousands of job seekers who found inspiration from successful resumes and landed their dream jobs.</p>
-          <Link 
-            href="/auth/signup" 
-            className="inline-block px-6 py-3 bg-white text-indigo-600 rounded-md font-medium hover:bg-gray-100 transition"
-          >
-            Get Started For Free
-          </Link>
-        </div>
+      
         
         {/* CTA Section - Resume Upload */}
         <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl p-8 mb-16 text-center">

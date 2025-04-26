@@ -1,4 +1,5 @@
 import { Pinecone } from '@pinecone-database/pinecone';
+import { generateEmbedding } from '@/utils/embeddings';
 
 // Create a client
 const pinecone = new Pinecone({
@@ -10,34 +11,39 @@ const index = pinecone.Index(process.env.PINECONE_INDEX_NAME || 'resumefind');
 
 export async function searchResumes(query: string, filterParams: any = {}, limit: number = 10) {
   try {
-    // In a real implementation, you would:
-    // 1. Convert the query text to an embedding vector using an embedding model
-    // 2. Use that vector to search Pinecone
-
-    // This is a mock implementation
-    console.log(`Searching for: ${query} with filters:`, filterParams);
+    // 1. Convert the query text to an embedding vector using our embedding model
+    const queryEmbedding = await generateEmbedding(query);
     
-    // Example mock response
-    return {
-      matches: [
-        { id: '1', score: 0.92 },
-        { id: '2', score: 0.87 },
-        { id: '3', score: 0.83 },
-      ]
-    };
+    // 2. Prepare filter if needed
+    const filter = Object.keys(filterParams).length > 0 ? filterParams : undefined;
+    
+    // 3. Use the embedding vector to search Pinecone
+    const queryResponse = await index.query({
+      vector: Array.from(queryEmbedding),
+      topK: limit,
+      filter,
+      includeMetadata: true,
+    });
+    
+    return queryResponse;
   } catch (error) {
     console.error('Error searching resumes:', error);
     throw error;
   }
 }
 
-export async function indexResume(resumeId: string, resumeData: any, contentVector: number[]) {
+export async function indexResume(resumeId: string, resumeData: any, resumeText: string) {
   try {
-    // In a real implementation, you would:
-    // 1. Upsert the document with its vector into Pinecone
+    // 1. Generate embedding for the resume text
+    const contentVector = await generateEmbedding(resumeText);
     
-    // This is a mock implementation
-    console.log(`Indexing resume: ${resumeId}`);
+    // 2. Upsert the document with its vector into Pinecone
+    await index.upsert([{
+      id: resumeId,
+      values: Array.from(contentVector),
+      metadata: resumeData,
+    }]);
+    
     return { success: true };
   } catch (error) {
     console.error('Error indexing resume:', error);
@@ -47,11 +53,8 @@ export async function indexResume(resumeId: string, resumeData: any, contentVect
 
 export async function deleteResumeFromIndex(resumeId: string) {
   try {
-    // In a real implementation, you would:
-    // 1. Delete the document from Pinecone
-    
-    // This is a mock implementation
-    console.log(`Deleting resume from index: ${resumeId}`);
+    // Delete the document from Pinecone
+    await index.deleteOne(resumeId);
     return { success: true };
   } catch (error) {
     console.error('Error deleting resume from index:', error);

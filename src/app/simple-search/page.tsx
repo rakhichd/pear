@@ -77,7 +77,7 @@ export default function SimpleSearchPage() {
   };
 
   // Extract skills from resume
-  const extractSkills = (resume: any) => {
+  const extractSkills = (resume: any): string[] => {
     if (resume.skills && Array.isArray(resume.skills)) {
       return resume.skills;
     }
@@ -170,9 +170,6 @@ export default function SimpleSearchPage() {
                       {resume.title || resume.metadata?.title || "Untitled Resume"}
                     </h3>
                     <div className="flex items-center gap-2">
-                      <span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs">
-                        Match Score: {(resume.score * 100).toFixed(0)}%
-                      </span>
                       <button 
                         onClick={() => viewResume(resume.id)}
                         className="text-indigo-600 hover:text-indigo-800"
@@ -207,7 +204,7 @@ export default function SimpleSearchPage() {
                   {skills.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-1 items-center">
                       <TagIcon className="h-4 w-4 text-gray-500" />
-                      {skills.map(skill => (
+                      {skills.map((skill: string) => (
                         <span 
                           key={skill} 
                           className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full text-xs"

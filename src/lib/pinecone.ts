@@ -1,6 +1,6 @@
 import { Pinecone } from '@pinecone-database/pinecone';
-import { generateEmbedding } from '@/utils/embeddings';
 import { ResumeData } from '@/types';
+import axios from 'axios';
 
 // Create a client
 const pinecone = new Pinecone({
@@ -10,6 +10,80 @@ const pinecone = new Pinecone({
 // Connect to index
 const indexName = process.env.PINECONE_INDEX_NAME || 'resumefind';
 const index = pinecone.Index(indexName);
+
+/**
+ * Generate embedding using OpenAI's API or fallback to a mock embedding
+ */
+async function generateEmbedding(text: string): Promise<number[]> {
+  try {
+    console.log('Pinecone: Generating embedding for text (first 100 chars):', text.substring(0, 100) + '...');
+    
+    if (!text) {
+      throw new Error('No text provided for embedding');
+    }
+    
+    // Check if OpenAI API key is available
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn('Pinecone: Warning - OPENAI_API_KEY not found in environment variables');
+      throw new Error('OPENAI_API_KEY not found');
+    }
+    
+    // Use OpenAI's embedding API
+    const response = await axios.post(
+      'https://api.openai.com/v1/embeddings',
+      {
+        input: text,
+        model: 'text-embedding-ada-002'
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    if (response.data && response.data.data && response.data.data[0] && response.data.data[0].embedding) {
+      const embedding = response.data.data[0].embedding;
+      
+      // Resize to match Pinecone's expected dimension (1024)
+      const resizedEmbedding = resizeEmbedding(embedding, 1024);
+      return resizedEmbedding;
+    } else {
+      throw new Error('Invalid response from OpenAI API');
+    }
+  } catch (error: any) {
+    console.error('Pinecone: Error generating embedding:', error.message);
+    
+    // Return a mock embedding with the correct dimensionality
+    console.log('Pinecone: Falling back to mock embedding with dimension 1024');
+    return new Array(1024).fill(0).map(() => Math.random() * 0.01); // Small random values
+  }
+}
+
+/**
+ * Resize an embedding to match the target dimension
+ */
+function resizeEmbedding(embedding: number[], targetDimension: number): number[] {
+  if (embedding.length === targetDimension) {
+    return embedding;
+  }
+  
+  console.log(`Pinecone: Resizing embedding from ${embedding.length} to ${targetDimension} dimensions`);
+  
+  // If embedding is larger than target, truncate
+  if (embedding.length > targetDimension) {
+    return embedding.slice(0, targetDimension);
+  }
+  
+  // If embedding is smaller than target, pad with zeros
+  const resized = new Array(targetDimension).fill(0);
+  for (let i = 0; i < embedding.length; i++) {
+    resized[i] = embedding[i];
+  }
+  
+  return resized;
+}
 
 /**
  * Prepares the resume data for embedding by combining relevant fields
@@ -114,10 +188,15 @@ export async function searchResumes(query: string, filterParams: any = {}, limit
       };
     }
     
-    // 1. Convert the query text to an embedding vector using our embedding model
-    console.log('Pinecone: Generating embedding for query');
+    // Print the search query for debugging
+    console.log('\n==== SEARCH QUERY BEING CONVERTED TO EMBEDDING ====');
+    console.log(query);
+    console.log('==== END OF SEARCH QUERY ====\n');
+    
+    // 1. Convert the query text to an embedding vector using OpenAI
+    console.log('Pinecone: Generating embedding for search query');
     const queryEmbedding = await generateEmbedding(query);
-    console.log('Pinecone: Embedding generated successfully');
+    console.log('Pinecone: Embedding generated successfully with dimension:', queryEmbedding.length);
     
     // 2. Prepare filter if needed
     const filter = Object.keys(filterParams).length > 0 ? filterParams : undefined;
@@ -126,13 +205,17 @@ export async function searchResumes(query: string, filterParams: any = {}, limit
     // 3. Use the embedding vector to search Pinecone
     console.log('Pinecone: Querying Pinecone index');
     const queryResponse = await index.query({
-      vector: Array.from(queryEmbedding),
+      vector: queryEmbedding,
       topK: limit,
       filter,
       includeMetadata: true,
     });
     
     console.log(`Pinecone: Search complete. Found ${queryResponse.matches?.length || 0} matches`);
+    if (queryResponse.matches && queryResponse.matches.length > 0) {
+      console.log('Pinecone: Top match score:', queryResponse.matches[0].score);
+    }
+    
     return queryResponse;
   } catch (error) {
     console.error('Pinecone: Error searching resumes:', error);

@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
     let searchResults;
     
     try {
+      console.log(`Search API: Converting query to embedding: "${searchQuery}"`);
       searchResults = await searchResumes(searchQuery, pineconeFilters, pageSize);
       console.log(`Search API: Pinecone returned ${searchResults.matches?.length || 0} matches`);
     } catch (pineconeError) {

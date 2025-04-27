@@ -72,6 +72,16 @@ export default function Home() {
                 <DocumentTextIcon className="h-5 w-5" />
                 <span className="font-medium">Get Resume Feedback</span>
               </Link>
+              <Link 
+                href="/main/resume/text-feedback" 
+                className="flex items-center gap-3 p-3 rounded-md hover:bg-indigo-50 text-gray-700 hover:text-indigo-600 transition-colors"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="font-medium">Text Resume Feedback</span>
+              </Link>
             </nav>
           </div>
           
@@ -225,16 +235,30 @@ export default function Home() {
         </div>
       
         
-        {/* CTA Section - Resume Upload */}
+        {/* CTA Section - Resume Upload & Feedback */}
         <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl p-8 mb-16 text-center">
           <h3 className="text-2xl font-bold mb-4">Share Your Success Story</h3>
           <p className="mb-6 max-w-2xl mx-auto">Help others succeed by sharing your winning resume. Upload your resume that landed you interviews or job offers.</p>
-          <Link 
-            href="/main/resume/upload" 
-            className="inline-block px-6 py-3 bg-white text-indigo-600 rounded-md font-medium hover:bg-gray-100 transition"
-          >
-            Upload Your Resume
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link 
+              href="/main/resume/upload" 
+              className="inline-block px-6 py-3 bg-white text-indigo-600 rounded-md font-medium hover:bg-gray-100 transition"
+            >
+              Upload Your Resume
+            </Link>
+            <Link 
+              href="/main/resume/feedback" 
+              className="inline-block px-6 py-3 bg-indigo-800 text-white rounded-md font-medium hover:bg-indigo-900 transition"
+            >
+              Get Resume Feedback
+            </Link>
+            <Link 
+              href="/main/resume/text-feedback" 
+              className="inline-block px-6 py-3 bg-indigo-900 text-white rounded-md font-medium hover:bg-indigo-950 transition"
+            >
+              Text-Based Feedback
+            </Link>
+          </div>
         </div>
       </div>
 

@@ -62,38 +62,22 @@ const importToFirebaseSequentially = async () => {
     const resumesData = JSON.parse(fs.readFileSync(processedDataPath, 'utf8'));
     console.log(`Loaded ${resumesData.length} resumes from processed data file`);
     
-    // Import in batches of 100
-    const batchSize = 100;
-    const totalResumes = resumesData.length;
-    let successCount = 0;
+    // Limit to first 5 resumes for testing
+    const limitedData = resumesData.slice(0, 5);
+    console.log(`Testing with first ${limitedData.length} resumes`);
     
-    for (let i = 0; i < totalResumes; i += batchSize) {
-      const end = Math.min(i + batchSize, totalResumes);
-      console.log(`\nProcessing batch of resumes ${i+1} to ${end} (out of ${totalResumes})...`);
-      
-      // Process this batch
-      for (let j = i; j < end; j++) {
-        const success = await importSingleResume(resumesData[j], j, totalResumes);
-        if (success) {
-          successCount++;
-        }
-        
-        // Add a small delay between requests to avoid overwhelming Firebase
-        if (j < end - 1) { // Don't delay after the last item
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
+    // Import sequentially
+    let successCount = 0;
+    for (let i = 0; i < limitedData.length; i++) {
+      const success = await importSingleResume(limitedData[i], i, limitedData.length);
+      if (success) {
+        successCount++;
       }
-      
-      console.log(`\nBatch progress: ${successCount}/${end} resumes uploaded successfully`);
-      
-      // If this isn't the last batch, add a longer delay between batches
-      if (end < totalResumes) {
-        console.log(`Taking a short break before the next batch...`);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
+      // Add a small delay between requests to avoid overwhelming Firebase
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
-    console.log(`\nImport completed: ${successCount}/${totalResumes} resumes uploaded successfully`);
+    console.log(`Import completed: ${successCount}/${limitedData.length} resumes uploaded successfully`);
     return true;
   } catch (error) {
     console.error('Error importing resumes to Firebase:', error);

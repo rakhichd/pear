@@ -31,20 +31,133 @@ const pinecone = new Pinecone({
 const resumesPath = path.join(__dirname, '../data/resumes/Resume.csv');
 const processedDataPath = path.join(__dirname, '../data/resumes/processed_data.json');
 
-// Simple schema for resume data
+// Helper function to extract skills from resume text
+function extractSkills(text) {
+  // Basic skill extraction based on common tech skills
+  const skillKeywords = [
+    'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Ruby', 'Go', 'Swift',
+    'React', 'Angular', 'Vue', 'Node.js', 'Express', 'Django', 'Flask', 'Spring',
+    'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes', 'SQL', 'NoSQL', 'MongoDB',
+    'Machine Learning', 'AI', 'Deep Learning', 'Data Science', 'TensorFlow', 'PyTorch',
+    'HTML', 'CSS', 'Sass', 'Redux', 'REST API', 'GraphQL', 'Git', 'CI/CD',
+    'Agile', 'Scrum', 'DevOps', 'Testing', 'Security', 'Blockchain', 'Cloud',
+    'Product Management', 'UI/UX', 'Figma', 'Adobe'
+  ];
+  
+  // Create a case-insensitive regex for each skill
+  const skills = [];
+  for (const skill of skillKeywords) {
+    const regex = new RegExp(`\\b${skill}\\b`, 'i');
+    if (regex.test(text)) {
+      skills.push(skill);
+    }
+  }
+  
+  return skills;
+}
+
+// Helper function to extract experience level
+function extractExperienceLevel(text) {
+  if (/senior|lead|principal|architect|manager|director|head/i.test(text)) {
+    return 'senior';
+  } else if (/mid|intermediate|\b[3-6] years\b/i.test(text)) {
+    return 'mid';
+  } else if (/junior|entry|intern|graduate|fresher|\b[0-2] years\b/i.test(text)) {
+    return 'entry';
+  } else if (/cxo|chief|executive|vp|vice president/i.test(text)) {
+    return 'executive';
+  }
+  return 'mid'; // Default to mid-level
+}
+
+// Helper function to extract education level
+function extractEducationLevel(text) {
+  if (/ph[.]?d|doctorate/i.test(text)) {
+    return 'phd';
+  } else if (/master|mba|m[.]s[.]|m[.]eng/i.test(text)) {
+    return 'master';
+  } else if (/bachelor|b[.]s[.]|b[.]a[.]|b[.]eng/i.test(text)) {
+    return 'bachelor';
+  } else if (/associate|a[.]a[.]|a[.]s[.]/i.test(text)) {
+    return 'associate';
+  }
+  return 'bachelor'; // Default to bachelor
+}
+
+// Helper function to extract companies
+function extractCompanies(text) {
+  // Common tech companies to look for
+  const commonCompanies = [
+    'Google', 'Microsoft', 'Amazon', 'Apple', 'Facebook', 'Meta', 'Netflix', 'IBM',
+    'Oracle', 'Salesforce', 'Adobe', 'Intel', 'Cisco', 'Twitter', 'LinkedIn', 'Uber',
+    'Airbnb', 'Stripe', 'Square', 'PayPal', 'eBay', 'Shopify', 'Spotify', 'Tesla'
+  ];
+  
+  const companies = [];
+  for (const company of commonCompanies) {
+    const regex = new RegExp(`\\b${company}\\b`, 'i');
+    if (regex.test(text)) {
+      companies.push(company);
+    }
+  }
+  
+  return companies;
+}
+
+// Extract years of experience
+function extractYearsExperience(text) {
+  const match = text.match(/\b(\d+)(?:\s*[-+]?\s*\d*)?\s*(?:years|yrs|yr)(?:\s+of\s+experience)?\b/i);
+  if (match) {
+    return match[1] + ' years';
+  }
+  return ''; // Default to empty string if no explicit years found
+}
+
+// Simple schema for standardized resume data
 const standardizeResume = (csvRow, index) => {
   const resumeId = `kaggle-${csvRow.ID || index}`;
+  const content = csvRow.Resume_str || '';
+  const category = csvRow.Category || 'General';
   
-  // Basic schema with default values if fields are missing
+  // Extract more information
+  const skills = extractSkills(content);
+  const experienceLevel = extractExperienceLevel(content);
+  const educationLevel = extractEducationLevel(content);
+  const companies = extractCompanies(content);
+  const yearsExperience = extractYearsExperience(content);
+  
+  // Basic standardized schema
   return {
     id: resumeId,
-    title: `${csvRow.Category || 'General'} Resume`,
-    category: csvRow.Category || 'General',
-    content: csvRow.Resume_str || '',
+    title: `${category} Resume`,
+    role: category,
+    content: content,
+    category: category,
+    
+    // Skills and technologies
+    skills: skills,
+    
+    // Experience details
+    experienceLevel: experienceLevel,
+    yearsExperience: yearsExperience,
+    companies: companies,
+    
+    // Education information
+    education: educationLevel !== 'bachelor' ? `${educationLevel} degree` : 'Bachelor\'s degree',
+    educationLevel: educationLevel,
+    
+    // Default values for required fields
+    author: 'Kaggle User',
+    isPublic: true,
+    interviews: [],
+    offers: [],
+    formattingStyle: 'professional',
+    
+    // Source and timestamps
     source: 'Kaggle Dataset',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
     lastUpdated: new Date().toISOString(),
-    // Generate a concatenated text for embedding
-    textForEmbedding: `Category: ${csvRow.Category || 'General'}\nResume: ${csvRow.Resume_str || ''}`,
   };
 };
 
@@ -83,6 +196,76 @@ const processCSV = () => {
   });
 };
 
+// Function to prepare resume text for embedding 
+function prepareResumeTextForEmbedding(resumeData) {
+  const parts = [];
+  
+  if (resumeData.title) parts.push(`Title: ${resumeData.title}`);
+  if (resumeData.role) parts.push(`Role: ${resumeData.role}`);
+  if (resumeData.experienceLevel) parts.push(`Experience Level: ${resumeData.experienceLevel}`);
+  
+  if (Array.isArray(resumeData.skills) && resumeData.skills.length > 0) {
+    parts.push(`Skills: ${resumeData.skills.join(', ')}`);
+  }
+  
+  if (resumeData.education) {
+    parts.push(`Education: ${resumeData.education}`);
+  }
+  
+  if (resumeData.yearsExperience) {
+    parts.push(`Years Experience: ${resumeData.yearsExperience}`);
+  }
+  
+  if (Array.isArray(resumeData.companies) && resumeData.companies.length > 0) {
+    parts.push(`Companies: ${resumeData.companies.join(', ')}`);
+  }
+  
+  // Add content at the end for semantic matching
+  if (resumeData.content) {
+    const contentPreview = resumeData.content.substring(0, 1000);
+    parts.push(`Content: ${contentPreview}`);
+  }
+  
+  return parts.join('\n');
+}
+
+// Prepare Pinecone metadata following the standardized format
+function preparePineconeMetadata(resumeData) {
+  return {
+    // Essential fields
+    title: resumeData.title || '',
+    role: resumeData.role || '',
+    experienceLevel: resumeData.experienceLevel || 'mid',
+    
+    // Skills and technologies
+    skills: Array.isArray(resumeData.skills) ? resumeData.skills : [],
+    
+    // Experience details
+    yearsExperience: resumeData.yearsExperience || '',
+    companies: Array.isArray(resumeData.companies) ? resumeData.companies : [],
+    
+    // Education information
+    educationLevel: resumeData.educationLevel || 'bachelor',
+    education: resumeData.education || '',
+    
+    // Interview and offer tracking
+    interviews: Array.isArray(resumeData.interviews) ? resumeData.interviews : [],
+    offers: Array.isArray(resumeData.offers) ? resumeData.offers : [],
+    
+    // Resume metadata
+    author: resumeData.author || '',
+    isPublic: resumeData.isPublic === true,
+    formattingStyle: resumeData.formattingStyle || 'professional',
+    
+    // Content preview (for search results)
+    contentPreview: resumeData.content ? resumeData.content.substring(0, 500) : '',
+    
+    // Timestamps
+    createdAt: resumeData.createdAt || Date.now(),
+    updatedAt: resumeData.updatedAt || Date.now()
+  };
+}
+
 // Upload to both Firebase and Pinecone
 const uploadData = async (resumes) => {
   try {
@@ -100,8 +283,8 @@ const uploadData = async (resumes) => {
       const batch = resumes.slice(i, i + batchSize);
       console.log(`Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(resumes.length/batchSize)}...`);
       
-      // Generate embeddings for the batch
-      const texts = batch.map(resume => resume.textForEmbedding);
+      // Generate embeddings for the batch using standardized format
+      const texts = batch.map(resume => prepareResumeTextForEmbedding(resume));
       const embedResults = await model.embed(texts);
       const embeddings = await embedResults.array();
       
@@ -126,14 +309,13 @@ const uploadData = async (resumes) => {
           paddedVector[k] = vector[k];
         }
         
+        // Prepare standardized metadata
+        const metadata = preparePineconeMetadata(resume);
+        
         pineconeVectors.push({
           id: resume.id,
           values: paddedVector,
-          metadata: {
-            title: resume.title,
-            category: resume.category,
-            content: resume.content.substring(0, 500) // Include a preview of content in metadata
-          }
+          metadata
         });
       });
       

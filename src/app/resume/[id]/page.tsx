@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeftIcon, DocumentTextIcon, TagIcon, ClockIcon, BuildingOfficeIcon, AcademicCapIcon, BookmarkIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, DocumentTextIcon, TagIcon, ClockIcon, BuildingOfficeIcon, AcademicCapIcon, BookmarkIcon, ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 import { BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid";
 import { getCurrentUserId, isLoggedIn } from "@/utils/auth-helpers";
+import { getResumePdfUrl } from "@/lib/resumeUtils";
 
 export default function ResumePage() {
   const params = useParams();
@@ -85,16 +86,6 @@ export default function ResumePage() {
     fetchResume();
   }, [resumeId]);
   
-  // Format the resume content for display
-  const formatContent = (content: string) => {
-    if (!content) return null;
-    
-    // Split by newlines and add paragraph elements
-    return content.split("\n").map((line, index) => 
-      line.trim() ? <p key={index} className="mb-2">{line}</p> : <br key={index} />
-    );
-  };
-  
   // Extract skills from content
   const extractSkills = (content: string) => {
     if (!content) return [];
@@ -111,6 +102,17 @@ export default function ResumePage() {
     return commonSkills.filter(skill => 
       content.toLowerCase().includes(skill.toLowerCase())
     );
+  };
+  
+  // Determine PDF URL based on resume data
+  const getPdfUrl = (resume: any) => {
+    if (resume?.pdfUrl) {
+      return resume.pdfUrl;
+    }
+    
+    // Use category if available
+    const category = resume?.category || '';
+    return getResumePdfUrl(resumeId, category);
   };
   
   // Go back to search results
@@ -355,14 +357,26 @@ export default function ResumePage() {
               </div>
             )}
             
-            {/* Resume Content */}
+            {/* PDF Viewer */}
             <div className="p-6">
-              <h2 className="text-lg font-semibold mb-4 text-gray-900">Resume Content</h2>
-              <div className="prose max-w-none text-gray-700">
-                {formatContent(resume.content || '')}
-                {!resume.content && (
-                  <p className="text-gray-500 italic">No content available</p>
-                )}
+              <div className="flex justify-end mb-4">
+                <a 
+                  href={getPdfUrl(resume)} 
+                  target="_blank" 
+                  download
+                  className="flex items-center text-indigo-600 hover:text-indigo-800"
+                >
+                  <ArrowDownTrayIcon className="h-5 w-5 mr-1" />
+                  Download PDF
+                </a>
+              </div>
+              
+              <div className="w-full h-[800px] border border-gray-200 rounded-lg overflow-hidden">
+                <iframe 
+                  src={getPdfUrl(resume)} 
+                  className="w-full h-full" 
+                  title={`${resume.title || 'Resume'} PDF`}
+                ></iframe>
               </div>
             </div>
           </div>

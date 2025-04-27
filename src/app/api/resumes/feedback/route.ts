@@ -1,5 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { promises as fs } from 'fs';
+import path from 'path';
+// Import modules dynamically to avoid any server initialization issues
+
+// Helper function to check if a file exists
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export const config = {
   api: {
@@ -28,26 +40,123 @@ export async function POST(request: NextRequest) {
     // Generate a unique ID for this feedback request
     const feedbackId = crypto.randomUUID();
     
-    // Store the resume file for analysis
+    // Get file buffer from the File object
     const fileBuffer = await file.arrayBuffer();
-    const storage = getStorage();
-    const storageRef = ref(storage, `feedback-requests/${feedbackId}/${file.name}`);
-    
-    await uploadBytesResumable(storageRef, new Uint8Array(fileBuffer));
-    const downloadURL = await getDownloadURL(storageRef);
 
-    // In a real application, you would:
-    // 1. Extract text from the PDF
-    // 2. Analyze it using an ML model or send to an API
-    // 3. Generate feedback based on target role, career level, etc.
+    // Define the local path where the file will be saved
+    const dataDir = path.join(process.cwd(), 'data', 'feedback');
+    const feedbackDir = path.join(dataDir, feedbackId);
     
-    // For this example, we'll provide mock feedback
-    const feedback = generateMockFeedback(targetRole, careerLevel, targetCompany, additionalContext);
+    // Create directories if they don't exist
+    try {
+      await fs.mkdir(dataDir, { recursive: true });
+      await fs.mkdir(feedbackDir, { recursive: true });
+    } catch (dirError) {
+      console.error('Error creating directories:', dirError);
+      throw new Error('Failed to create directories for feedback storage');
+    }
+    
+    // Save the file to the local filesystem
+    const filePath = path.join(feedbackDir, file.name);
+    await fs.writeFile(filePath, Buffer.from(fileBuffer));
+    
+    // Store metadata in a JSON file
+    const feedbackData = {
+      id: feedbackId,
+      fileName: file.name,
+      filePath: filePath.replace(process.cwd(), ''),
+      targetRole,
+      targetCompany,
+      careerLevel,
+      additionalContext,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Save the metadata to a JSON file
+    const metadataPath = path.join(feedbackDir, 'metadata.json');
+    await fs.writeFile(metadataPath, JSON.stringify(feedbackData, null, 2));
+
+    let feedback;
+    
+    // Check if ANTHROPIC_API_KEY is set
+    if (process.env.ANTHROPIC_API_KEY) {
+      try {
+        // Read the PDF file
+        console.log(`Reading PDF file from: ${filePath}`);
+        
+        // Check if file exists
+        if (!await fileExists(filePath)) {
+          console.error(`PDF file does not exist at path: ${filePath}`);
+          throw new Error(`PDF file not found at ${filePath}`);
+        }
+        
+        console.log(`File exists, reading file...`);
+        const fileBuffer = await fs.readFile(filePath);
+        console.log(`File read successfully, size: ${fileBuffer.length} bytes`);
+        
+        // Extract the PDF text directly in the API route
+        let resumeText;
+        try {
+          // Import pdf-parse dynamically
+          const pdfParse = (await import('pdf-parse')).default;
+          
+          try {
+            // Parse the PDF
+            const pdfData = await pdfParse(fileBuffer);
+            resumeText = pdfData.text;
+            
+            if (resumeText && resumeText.length > 0) {
+              console.log(`Successfully extracted ${resumeText.length} characters from PDF`);
+              console.log('Sample text:', resumeText.slice(0, 200) + '...');
+            } else {
+              console.warn('PDF parsing succeeded but returned no text');
+              resumeText = "PDF file appears to contain no extractable text. It may be image-based or scanned.";
+            }
+          } catch (parseError) {
+            console.error('Error parsing PDF:', parseError);
+            resumeText = "Failed to extract text from PDF. Using generic content for feedback instead.";
+          }
+        } catch (importError) {
+          console.error('Error importing pdf-parse:', importError);
+          resumeText = "PDF processing module could not be loaded. Using generic content for feedback.";
+        }
+        
+        try {
+          // Import the Claude helper dynamically
+          const { generateResumeFeedback } = await import('@/lib/claude');
+          
+          // Generate feedback using Claude
+          feedback = await generateResumeFeedback(
+            resumeText, 
+            targetRole, 
+            targetCompany, 
+            careerLevel
+          );
+        } catch (claudeError) {
+          console.error('Error using Claude for feedback:', claudeError);
+          // Fall back to mock feedback if Claude fails
+          feedback = generateMockFeedback(targetRole, careerLevel, targetCompany, additionalContext);
+        }
+      } catch (extractError) {
+        console.error('Error extracting text from PDF:', extractError);
+        // Fall back to mock feedback if text extraction fails
+        feedback = generateMockFeedback(targetRole, careerLevel, targetCompany, additionalContext);
+      }
+    } else {
+      console.log('ANTHROPIC_API_KEY not set, using mock feedback instead');
+      // Use mock feedback if API key is not set
+      feedback = generateMockFeedback(targetRole, careerLevel, targetCompany, additionalContext);
+    }
+    
+    // Save the feedback to a file
+    const feedbackPath = path.join(feedbackDir, 'feedback.md');
+    await fs.writeFile(feedbackPath, feedback);
 
     return NextResponse.json({
       success: true,
       feedbackId,
       feedback,
+      filePath: filePath.replace(process.cwd(), ''),
     });
   } catch (error) {
     console.error('Error processing resume feedback:', error);

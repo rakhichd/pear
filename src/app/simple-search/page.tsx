@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { MagnifyingGlassIcon, ArrowTopRightOnSquareIcon, DocumentTextIcon, TagIcon, BriefcaseIcon, ArrowLongRightIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, ArrowTopRightOnSquareIcon, DocumentTextIcon, TagIcon, BriefcaseIcon, ArrowLongRightIcon, DocumentArrowDownIcon } from "@heroicons/react/24/outline";
 
 export default function SimpleSearchPage() {
   const searchParams = useSearchParams();
@@ -14,54 +14,8 @@ export default function SimpleSearchPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Handle search submission
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      setError("Please enter a search query");
-      return;
-    }
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      console.log("Starting search with query:", searchQuery);
-      
-      // Direct API call without embedding processing
-      const response = await fetch('/api/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          searchQuery,
-          filters: {},
-          page: 1,
-          pageSize: 20,
-        }),
-      });
-      
-      console.log("Response status:", response.status);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || `Search request failed with status ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log("Received data:", data);
-      setResults(data.results || []);
-
-      // Update URL with the search query
-      const urlParams = new URLSearchParams(window.location.search);
-      urlParams.set('q', searchQuery);
-      const newRelativePathQuery = `${window.location.pathname}?${urlParams.toString()}`;
-      window.history.pushState(null, '', newRelativePathQuery);
-    } catch (err: any) {
-      console.error('Search error:', err);
-      setError(`Failed to search resumes: ${err.message || 'Unknown error'}`);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSearch = () => {
+    executeSearch(searchQuery);
   };
 
   // Handle key press for search input
@@ -98,14 +52,62 @@ export default function SimpleSearchPage() {
     const queryParam = searchParams.get('q');
     if (queryParam) {
       setSearchQuery(queryParam);
-      // Wait a moment for component to fully initialize before searching
-      const timer = setTimeout(() => {
-        handleSearch();
-      }, 100);
-      return () => clearTimeout(timer);
+      // Execute search immediately
+      executeSearch(queryParam);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]); // Intentionally excluding handleSearch to prevent infinite loop
+  
+  // Separate search execution function to be able to call it directly with a query
+  const executeSearch = async (query: string) => {
+    if (!query.trim()) {
+      setError("Please enter a search query");
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      console.log("Starting search with query:", query);
+      
+      // Direct API call without embedding processing
+      const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          searchQuery: query,
+          filters: {},
+          page: 1,
+          pageSize: 20,
+        }),
+      });
+      
+      console.log("Response status:", response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `Search request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Received data:", data);
+      setResults(data.results || []);
+
+      // Update URL with the search query
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.set('q', query);
+      const newRelativePathQuery = `${window.location.pathname}?${urlParams.toString()}`;
+      window.history.pushState(null, '', newRelativePathQuery);
+    } catch (err: any) {
+      console.error('Search error:', err);
+      setError(`Failed to search resumes: ${err.message || 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -231,7 +233,8 @@ export default function SimpleSearchPage() {
                       onClick={() => viewResume(resume.id)}
                       className="flex items-center text-sm text-indigo-600 hover:text-indigo-800 font-medium"
                     >
-                      View Full Resume
+                      <DocumentArrowDownIcon className="h-4 w-4 mr-1" />
+                      View Resume PDF
                       <ArrowLongRightIcon className="h-4 w-4 ml-1" />
                     </button>
                   </div>

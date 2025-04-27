@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 export async function GET(
   request: NextRequest,
@@ -10,6 +10,7 @@ export async function GET(
     const resumeId = params.id;
     
     if (!resumeId) {
+      console.log('Resume ID is missing in request');
       return NextResponse.json(
         { error: 'Resume ID is required' },
         { status: 400 }
@@ -20,29 +21,55 @@ export async function GET(
     
     // Fetch the resume from Firestore
     const resumeRef = doc(db, 'resumes', resumeId);
-    const resumeSnap = await getDoc(resumeRef);
+    let resumeSnap;
+
+    try {
+      resumeSnap = await getDoc(resumeRef);
+    } catch (fetchError) {
+      console.error(`Error getting document from Firestore: ${fetchError.message}`);
+      throw new Error(`Database fetch error: ${fetchError.message}`);
+    }
     
     if (!resumeSnap.exists()) {
-      // If resume doesn't exist in Firestore, check Pinecone metadata
+      console.log(`Resume not found: ${resumeId}`);
+
+    // Fetch the resume from local filesystem
+    const dataDir = path.join(process.cwd(), 'data', 'resumes');
+    const metadataPath = path.join(dataDir, resumeId, 'metadata.json');
+    
+    let resumeData;
+    try {
+      const fileContent = await fs.readFile(metadataPath, 'utf-8');
+      resumeData = JSON.parse(fileContent);
+    } catch (err) {
+      console.error('Error reading resume file:', err);
+
       return NextResponse.json(
         { error: 'Resume not found' },
         { status: 404 }
       );
     }
     
+    const resumeData = resumeSnap.data();
+    console.log(`Resume found. Title: ${resumeData.title}`);
+    
     // Format the resume data
-    const resumeData = {
+    const formattedResumeData = {
       id: resumeSnap.id,
-      ...resumeSnap.data(),
+      ...resumeData,
       // Convert Firestore timestamp to ISO string if it exists
-      lastUpdated: resumeSnap.data().lastUpdated ? 
-        resumeSnap.data().lastUpdated.toDate().toISOString() : 
+      lastUpdated: resumeData.lastUpdated ? 
+        (typeof resumeData.lastUpdated.toDate === 'function' ? 
+          resumeData.lastUpdated.toDate().toISOString() : 
+          resumeData.lastUpdated) : 
         new Date().toISOString()
     };
+
     
-    return NextResponse.json({ resume: resumeData });
+    return NextResponse.json({ resume: formattedResumeData });
   } catch (error: any) {
     console.error('Error fetching resume:', error);
+    console.error('Stack trace:', error.stack);
     
     return NextResponse.json(
       { error: `Failed to fetch resume: ${error.message}` },

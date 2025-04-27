@@ -5,12 +5,47 @@ import { ArrowLeftIcon, DocumentDuplicateIcon, StarIcon } from '@heroicons/react
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { useState, useEffect } from 'react';
 
+import { use } from 'react';
+
 export default function ResumeDetailPage({ params }: { params: { id: string } }) {
   const [isSaved, setIsSaved] = useState(false);
   const [resumeData, setResumeData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
+  // Properly unwrap params using React.use()
+  const unwrappedParams = use(params);
+  
+  // Mock resume data
+  const resumeData = {
+    id: unwrappedParams.id,
+    title: "Senior Software Engineer Resume",
+    author: "Anonymous User",
+    lastUpdated: "December 2023",
+    education: "B.S. Computer Science, UC Berkeley",
+    yearsExperience: "5+ years",
+    skills: ["React", "TypeScript", "Node.js", "AWS", "Python", "GraphQL"],
+    offers: ["Google", "Meta", "Amazon"],
+    interviews: ["Apple", "Microsoft", "Netflix"],
+    content: `
+      <div class="mb-6">
+        <h3 class="text-lg font-bold mb-2">EDUCATION</h3>
+        <p><strong>University of California, Berkeley</strong> - B.S. Computer Science, 2018</p>
+        <p class="text-sm">GPA: 3.8/4.0, Dean's List all semesters</p>
+      </div>
+      
+      <div class="mb-6">
+        <h3 class="text-lg font-bold mb-2">EXPERIENCE</h3>
+        
+        <div class="mb-4">
+          <p class="font-semibold">Senior Software Engineer | Meta</p>
+          <p class="text-sm">June 2021 - Present</p>
+          <ul class="list-disc pl-5 mt-2 text-sm">
+            <li>Led development of React-based frontend for new advertising analytics platform</li>
+            <li>Implemented real-time data visualization components reducing load time by 40%</li>
+            <li>Mentored junior engineers and conducted technical interviews</li>
+          </ul>
+        </div>
   useEffect(() => {
     // Fetch the resume data from the API
     const fetchResume = async () => {

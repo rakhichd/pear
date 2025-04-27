@@ -1,10 +1,11 @@
 "use client";
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { isLoggedIn } from '@/utils/auth-helpers';
 
 type LoginFormValues = {
   email: string;
@@ -15,6 +16,14 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  
+  // Check if user is already logged in
+  useEffect(() => {
+    if (isLoggedIn()) {
+      // Redirect to profile page if already logged in
+      router.push('/main/profile');
+    }
+  }, [router]);
   
   const {
     register,
@@ -27,19 +36,32 @@ export default function LoginPage() {
     setError(null);
     
     try {
-      // This is a mockup implementation
-      // In a real application, you would use Firebase Authentication
+      // Simulate loading time to make it feel realistic
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      console.log('Logging in with:', data);
+      // Store user information in localStorage for demo purposes
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('dummyAuth', 'true');
+        localStorage.setItem('userEmail', data.email);
+        localStorage.setItem('userName', data.email.split('@')[0]);
+        localStorage.setItem('userId', 'demo-user-' + Math.floor(Math.random() * 1000));
+        localStorage.setItem('userCreated', new Date().toISOString());
+      }
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log('Successfully logged in with dummy account');
       
-      // Redirect to the main page after successful login
-      router.push('/main/search');
-    } catch (err) {
+      // Check if there was a resume the user wanted to save before logging in
+      const resumeToSave = localStorage.getItem('resumeToSaveAfterLogin');
+      if (resumeToSave) {
+        localStorage.removeItem('resumeToSaveAfterLogin');
+        router.push(`/resume/${resumeToSave}`);
+      } else {
+        // Manually redirect to profile page
+        router.push('/main/profile');
+      }
+    } catch (err: any) {
       console.error('Login error:', err);
-      setError('Invalid email or password. Please try again.');
+      setError('An error occurred. Please refresh and try again.');
     } finally {
       setIsLoading(false);
     }

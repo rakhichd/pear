@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Resume</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f9fafb;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .card {
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+    }
+    h1 {
+      color: #111827;
+      margin-top: 0;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #374151;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      margin-bottom: 1rem;
+    }
+    .file-upload {
+      border: 2px dashed #d1d5db;
+      border-radius: 0.5rem;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      cursor: pointer;
+    }
+    .file-upload:hover {
+      border-color: #4f46e5;
+    }
+    .file-name {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    button {
+      background-color: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 0.375rem;
+      padding: 0.75rem 1.5rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #4338ca;
+    }
+    .button-container {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .error {
+      background-color: #fee2e2;
+      color: #b91c1c;
+      padding: 1rem;
+      border-radius: 0.375rem;
+      margin-bottom: 1rem;
+    }
+    .link {
+      color: #4f46e5;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .link:hover {
+      color: #4338ca;
+    }
+    .link svg {
+      width: 1rem;
+      height: 1rem;
+      margin-right: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="link">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      Back to home
+    </a>
+    
+    <div class="card">
+      <h1>Upload Your Successful Resume</h1>
+      <p>Share your resume to help others in their job search journey.</p>
+      
+      <div id="error" class="error" style="display: none;"></div>
+      <div id="success" style="background-color: #ecfdf5; color: #047857; padding: 1rem; border-radius: 0.375rem; margin-bottom: 1rem; display: none;">
+        Resume uploaded successfully!
+      </div>
+      
+      <form id="uploadForm">
+        <div class="file-upload" id="dropArea">
+          <input 
+            type="file" 
+            id="resumeUpload" 
+            name="file" 
+            accept=".pdf" 
+            hidden
+            required
+          >
+          <div id="fileNameDisplay" class="file-name" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="#4f46e5" style="width: 1.5rem; height: 1.5rem; margin-right: 0.5rem;">
+              <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+            </svg>
+            <span id="fileName"></span>
+          </div>
+          <div id="uploadPrompt">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="#9ca3af" style="width: 3rem; height: 3rem; margin: 0 auto 0.75rem;">
+              <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+            </svg>
+            <p>Drag and drop your PDF file here or click to browse</p>
+            <p style="font-size: 0.875rem; color: #6b7280;">Max file size: 5MB</p>
+          </div>
+        </div>
+        
+        <label for="role">Role *</label>
+        <input 
+          type="text" 
+          id="role" 
+          name="role"
+          placeholder="E.g., Software Engineer, Product Manager"
+          required
+        >
+        
+        <label for="result">Result (interviews/offers) *</label>
+        <textarea 
+          id="result" 
+          name="result" 
+          rows="2"
+          placeholder="E.g., Received offers from Google and Meta, interview at Amazon"
+          required
+        ></textarea>
+        
+        <div class="button-container">
+          <button type="submit" id="uploadButton">Upload Resume</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('uploadForm');
+      const fileInput = document.getElementById('resumeUpload');
+      const fileName = document.getElementById('fileName');
+      const fileNameDisplay = document.getElementById('fileNameDisplay');
+      const uploadPrompt = document.getElementById('uploadPrompt');
+      const dropArea = document.getElementById('dropArea');
+      const errorDiv = document.getElementById('error');
+      const successDiv = document.getElementById('success');
+      const uploadButton = document.getElementById('uploadButton');
+      
+      // Handle file selection
+      fileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        
+        if (file) {
+          // Validate file type
+          if (file.type !== 'application/pdf') {
+            showError('Please upload a PDF file');
+            fileInput.value = '';
+            return;
+          }
+          
+          // Validate file size (5MB max)
+          if (file.size > 5 * 1024 * 1024) {
+            showError('File size should be less than 5MB');
+            fileInput.value = '';
+            return;
+          }
+          
+          // Display file name
+          fileName.textContent = file.name;
+          fileNameDisplay.style.display = 'flex';
+          uploadPrompt.style.display = 'none';
+          errorDiv.style.display = 'none';
+        } else {
+          fileNameDisplay.style.display = 'none';
+          uploadPrompt.style.display = 'block';
+        }
+      });
+      
+      // Handle form submission
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!fileInput.files[0]) {
+          showError('Please upload a resume file');
+          return;
+        }
+        
+        const role = document.getElementById('role').value;
+        const result = document.getElementById('result').value;
+        
+        if (!role) {
+          showError('Please enter a role');
+          return;
+        }
+        
+        if (!result) {
+          showError('Please enter a result');
+          return;
+        }
+        
+        uploadButton.textContent = 'Uploading...';
+        uploadButton.disabled = true;
+        
+        // Create FormData
+        const formData = new FormData(form);
+        
+        // Send directly to server
+        fetch('/api/resumes/upload', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          if (!response.ok) {
+            return response.json().then(data => {
+              throw new Error(data.error || 'Failed to upload resume');
+            });
+          }
+          return response.json();
+        })
+        .then(data => {
+          // Show success message
+          successDiv.style.display = 'block';
+          errorDiv.style.display = 'none';
+          
+          // Reset form
+          form.reset();
+          fileNameDisplay.style.display = 'none';
+          uploadPrompt.style.display = 'block';
+          
+          // Enable button
+          uploadButton.textContent = 'Upload Resume';
+          uploadButton.disabled = false;
+        })
+        .catch(error => {
+          showError(error.message || 'Failed to upload resume. Please try again.');
+          uploadButton.textContent = 'Upload Resume';
+          uploadButton.disabled = false;
+        });
+      });
+      
+      // Click handler for the drop area
+      dropArea.addEventListener('click', function() {
+        fileInput.click();
+      });
+      
+      // Drag and drop handlers
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+      });
+      
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false);
+      });
+      
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+      });
+      
+      function highlight() {
+        dropArea.style.borderColor = '#4f46e5';
+      }
+      
+      function unhighlight() {
+        dropArea.style.borderColor = '#d1d5db';
+      }
+      
+      dropArea.addEventListener('drop', handleDrop, false);
+      
+      function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const file = dt.files[0];
+        
+        fileInput.files = dt.files;
+        
+        // Trigger change event
+        const event = new Event('change');
+        fileInput.dispatchEvent(event);
+      }
+      
+      function showError(message) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        successDiv.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

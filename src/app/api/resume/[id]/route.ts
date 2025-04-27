@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 export async function GET(
   request: NextRequest,
@@ -32,6 +32,18 @@ export async function GET(
     
     if (!resumeSnap.exists()) {
       console.log(`Resume not found: ${resumeId}`);
+
+    // Fetch the resume from local filesystem
+    const dataDir = path.join(process.cwd(), 'data', 'resumes');
+    const metadataPath = path.join(dataDir, resumeId, 'metadata.json');
+    
+    let resumeData;
+    try {
+      const fileContent = await fs.readFile(metadataPath, 'utf-8');
+      resumeData = JSON.parse(fileContent);
+    } catch (err) {
+      console.error('Error reading resume file:', err);
+
       return NextResponse.json(
         { error: 'Resume not found' },
         { status: 404 }
@@ -52,6 +64,7 @@ export async function GET(
           resumeData.lastUpdated) : 
         new Date().toISOString()
     };
+
     
     return NextResponse.json({ resume: formattedResumeData });
   } catch (error: any) {

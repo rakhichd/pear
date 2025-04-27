@@ -7,12 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "setup": "npm run setup:nextauth && npm run setup:pinecone",
+    "setup": "npm run setup:nextauth && npm run setup:pinecone && npm run setup:feedback",
     "setup:nextauth": "node scripts/generate-nextauth-secret.js",
     "setup:pinecone": "node scripts/setup-pinecone.js",
-    "test:pinecone": "node scripts/test-pinecone.js"
+    "setup:feedback": "node scripts/install-dependencies.js",
+    "test:pinecone": "node scripts/test-pinecone.js",
+    "test:claude": "node scripts/test-claude.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.40.0",
     "@headlessui/react": "^2.2.2",
     "@heroicons/react": "^2.2.0",
     "@pinecone-database/pinecone": "^5.1.2",
@@ -23,6 +26,9 @@
     "dotenv": "^16.5.0",
     "firebase": "^10.7.2",
     "next": "15.3.1",
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^5.1.91",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.1"

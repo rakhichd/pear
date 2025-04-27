@@ -66,27 +66,25 @@ export default function UploadResume() {
     try {
       setUploading(true);
       
-      // 1. Upload the file and metadata using FormData
       const formDataToSend = new FormData();
       formDataToSend.append('file', file);
       formDataToSend.append('role', formData.role);
       formDataToSend.append('result', formData.result);
       
-      // 2. Send the data to our API
       const response = await fetch('/api/resumes/upload', {
         method: 'POST',
         body: formDataToSend,
       });
-      
+  
+      // Check if the response is successful
       if (!response.ok) {
         const errorData = await response.json();
+        setError(errorData.error || 'Failed to upload resume');
         throw new Error(errorData.error || 'Failed to upload resume');
       }
-      
+  
       const data = await response.json();
-      
-      // 3. Redirect to the resume view page
-      router.push(`/main/resume/${data.resumeId}`);
+      router.push(`/main/resume/upload/success?id=${data.resumeId}`);
       
     } catch (err) {
       console.error('Error uploading resume:', err);
@@ -95,6 +93,7 @@ export default function UploadResume() {
       setUploading(false);
     }
   };
+   
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { MagnifyingGlassIcon, ArrowTopRightOnSquareIcon, DocumentTextIcon, TagIcon, BriefcaseIcon, ArrowLongRightIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, ArrowTopRightOnSquareIcon, DocumentTextIcon, TagIcon, BriefcaseIcon, ArrowLongRightIcon, DocumentArrowDownIcon } from "@heroicons/react/24/outline";
 
 export default function SimpleSearchPage() {
   const searchParams = useSearchParams();
@@ -233,7 +233,8 @@ export default function SimpleSearchPage() {
                       onClick={() => viewResume(resume.id)}
                       className="flex items-center text-sm text-indigo-600 hover:text-indigo-800 font-medium"
                     >
-                      View Full Resume
+                      <DocumentArrowDownIcon className="h-4 w-4 mr-1" />
+                      View Resume PDF
                       <ArrowLongRightIcon className="h-4 w-4 ml-1" />
                     </button>
                   </div>

@@ -100,3 +100,30 @@ export function signOut(): void {
     localStorage.removeItem('userCreated');
   }
 }
+
+/**
+ * Update user profile information
+ * @param {object} profileData - The updated profile data
+ * @param {string} profileData.displayName - The updated display name
+ * @param {string} profileData.email - The updated email
+ * @returns {Promise<boolean>} Whether the update was successful
+ */
+export async function updateUserProfile(profileData: { displayName: string, email: string }): Promise<boolean> {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  
+  try {
+    // Simulate an API call delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Update localStorage with the new values
+    localStorage.setItem('userEmail', profileData.email);
+    localStorage.setItem('userName', profileData.displayName);
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    return false;
+  }
+}

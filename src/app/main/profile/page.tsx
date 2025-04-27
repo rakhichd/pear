@@ -564,7 +564,7 @@ export default function ProfilePage() {
                         <p className="text-xs text-gray-600">Categorized</p>
                       </div>
                     </div>
-                    <div className="flex justify-between gap-3">
+                    <div className="flex flex-wrap gap-3">
                       <Link 
                         href="/main/search"
                         className="flex items-center text-sm px-4 py-2 text-indigo-600 border border-indigo-200 rounded-full hover:bg-indigo-50 transition"
@@ -573,6 +573,15 @@ export default function ProfilePage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                         Search Resumes
+                      </Link>
+                      <Link 
+                        href="/main/profile/edit"
+                        className="flex items-center text-sm px-4 py-2 text-purple-600 border border-purple-200 rounded-full hover:bg-purple-50 transition"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                        Edit Profile
                       </Link>
                       <button
                         onClick={() => {

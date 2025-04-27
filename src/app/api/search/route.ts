@@ -78,27 +78,19 @@ export async function POST(request: NextRequest) {
       
       // Map the document snapshots to their data
       const resumes = resumeDocs
-        .filter(docSnap => docSnap.exists())
+        .filter(docSnap => docSnap.exists)  // Fixed: removed extra .filter()
         .map(docSnap => {
-          const data = docSnap.data() as ResumeData;
+          const data = docSnap.data as ResumeData;
           const matchData = searchResults.matches.find(match => match.id === docSnap.id);
           
           // Use metadata from Pinecone to enhance results if available
           const pineconeMetadata = matchData?.metadata || {};
           
-        .filter(doc => doc.exists)
-        .map(doc => {
           return {
-            id: doc.id,
-            ...doc.data,
-            // Add the match score from Pinecone
-// <<<<<<< resumefind
-            score: matchData?.score || 0,
-            // Add relevance highlights based on the query
-            highlights: generateHighlights(searchQuery, data.content)
-// =======
-//             score: searchResults.matches.find(match => match.id === doc.id)?.score || 0
-// >>>>>>> main
+            id: docSnap.id,
+            ...data,
+            score: matchData?.score || 0,  // Add match score from Pinecone
+            highlights: generateHighlights(searchQuery, data.content)  // Add relevance highlights
           };
         });
 
@@ -234,4 +226,4 @@ function generateHighlights(query: string, content: string): string[] {
   }
   
   return highlights;
-} 
+}

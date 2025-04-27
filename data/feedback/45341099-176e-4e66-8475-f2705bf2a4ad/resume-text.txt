@@ -1,0 +1,44 @@
+University of California, Berkeley
+B.A. Computer Science, Data Science
+Expected May 2026
+GPA: 3.85 / 4.0
+Relevant Coursework: Introduction to Machine Learning, Data Structures, Great Ideas in Computer Architecture, Computer
+Security, Database Systems, Foundations of Data Science, Discrete Mathematics and Probability Theory, Linear Algebra and
+Differential Equations, Linux System Administration, Innovation & Design Theory, Design Principles
+Activities: Invention Corps @ Berkeley (Human-Centered Design), Plextech Software Solutions
+Professional Experience
+Cherish Health | Machine Learning Engineer Intern Jan. 2025- Present
+Analyzed radar intelligence data with moving target indicator to detect human body orientations and their transition states
+Computed rolling variance and FFT spectral energy from radar receives; increased overall model transition detection by 2.7%
+Pioneering computer-vision ML model with OpenPose to extract keypoints for pose estimation and body orientation classification
+Amazon Web Services (AWS) | Software Engineer Contractor Sep. 2024 - Dec.2024
+Implemented a feedback-driven system to accelerate Amazon OpenSearch engine with SQL/PPL subquery telemetry collection
+Built preprocessing pipeline via JSON plan listener and heuristic computations for materialized view candidate selection
+Designed caching strategies (full/intermediate), data skipping index (SMA-based) for I/O reduction using ApacheSpark and Scala
+MagicLabs | Software Engineer Contractor Jan. 2025 - Present
+Developing a crypto-focused agentic LLM SDK (Coinbase Agentkit) to streamline blockchain interactions by integrating
+Ethereum-based and Collateralized Debt Position-specific wallet providers to support transaction swaps and smart contract signing
+Building Python-based wallet action-providers with decentralized finance protocols including ERC721, Morpho, and Superfluid
+Change.org | Associated Product Manager Jan. 2024 - May. 2024
+Managed 6 designers with Agile and design cycle; Delivered modules now live on platform to impact 200M+ global petition starters
+Derived 5+ data reports to prototype demographic analysis tool, language AI-assistant, and the brand-new decision maker interface
+Projects
+Micro-Mouse Competition Feb. 2025
+Built a maze-solving micromouse from scratch, soldered motor driver circuits, integrated LED lights and ultrasonic sensors
+Encoding Python maze solving algorithms including A*
+, dijkstra’s to reduce navigation time for optimized path search + detection
+2023 CalHacks 10.0 - Express Call AI | Software Developer
+Oct. 2023
+Designed hospital AI-tool with Hume AI and PyAudio to batch process audio-visual data for patients with physical restraints
+Built a PyTorch machine learning model employing CNN and ReLU activation functions to compute patient distress indexes
+Improved accuracy by 23% through insights from Google Analytics reports and hyperparameter tuning with TensorBoard
+Awards
+Ethics Bowl | Team Captain - 2x National Champions
+2021, 2022
+Issued by UNC Chapel Hill Parr Center for Ethics
+Led team to national championships, won against 300+ teams to engage in critical debates on contemporary ethical dilemmas
+Advocated for philosophical considerations in computing safety, data security, and diversity / inclusion within AI technologies
+Skills
+Languages: Python, Java, C++, C, SQL, JavaScript, Swift, TypeScript, HTML/CSS, Scheme, Bash, Ruby
+Technologies and Tools: Vertex AI, GCS, MatLab, Docker, React.js, Jupyter Notebook, NumPy, Git, Linux, PyAudio, PyTorch,
+Hume AI, Webpack, GCP, Cloud SQL, AWS, Django, MongoDB, Flask, MySQL, MongoDB, Scala, ApacheSpark, OpenSearc

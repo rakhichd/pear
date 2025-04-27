@@ -535,39 +535,6 @@ export default function ProfilePage() {
           </div>
         ) : (
           <>
-            {/* Profile Section */}
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 mb-8">
-              <div className="p-6">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                  <div className="bg-indigo-100 rounded-full p-4">
-                    <UserCircleIcon className="h-16 w-16 text-indigo-600" />
-                  </div>
-                  <div className="text-center sm:text-left">
-                    <h2 className="text-xl font-semibold">{user?.displayName || getUserDisplayName()}</h2>
-                    <p className="text-gray-600">{user?.email || getUserEmail()}</p>
-                    <p className="text-gray-500 text-sm mt-1">Member since {user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : new Date().toLocaleDateString()}</p>
-                    <div className="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
-                      <Link 
-                        href="/main/search"
-                        className="text-sm px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
-                      >
-                        Search Resumes
-                      </Link>
-                      <button
-                        onClick={() => {
-                          signOut();
-                          router.push("/auth/login");
-                        }}
-                        className="text-sm px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
-                      >
-                        Sign Out
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* User Profile Card */}
             <div className="mb-8">
               <div className="bg-white rounded-xl shadow-md overflow-hidden p-1">
@@ -590,14 +557,23 @@ export default function ProfilePage() {
                       </div>
                       <div className="bg-purple-50 rounded-lg p-3 text-center">
                         <p className="text-2xl font-bold text-purple-600">{Object.keys(groups).length}</p>
-                        <p className="text-xs text-gray-600">Groups</p>
+                        <p className="text-xs text-gray-600">Collections</p>
                       </div>
                       <div className="bg-pink-50 rounded-lg p-3 text-center">
                         <p className="text-2xl font-bold text-pink-600">{Object.values(groups).reduce((sum, ids) => sum + ids.length, 0)}</p>
                         <p className="text-xs text-gray-600">Categorized</p>
                       </div>
                     </div>
-                    <div className="flex justify-end gap-3">
+                    <div className="flex justify-between gap-3">
+                      <Link 
+                        href="/main/search"
+                        className="flex items-center text-sm px-4 py-2 text-indigo-600 border border-indigo-200 rounded-full hover:bg-indigo-50 transition"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        Search Resumes
+                      </Link>
                       <button
                         onClick={() => {
                           signOut();
@@ -635,10 +611,10 @@ export default function ProfilePage() {
               </div>
               
               {Object.keys(groups).length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {Object.entries(groups).map(([groupName, resumeIds]) => (
                     <div key={groupName} className="group bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 h-full flex flex-col transform transition duration-300 hover:scale-[1.02] hover:shadow-xl">
-                      <div className="p-6 border-b border-gray-100 flex justify-between items-center relative overflow-hidden">
+                      <div className="p-6 border-b border-gray-100 flex justify-between items-center relative overflow-hidden bg-gradient-to-r from-indigo-50 to-indigo-100">
                         {/* Background pattern decoration */}
                         <div className="absolute inset-0 opacity-5 pointer-events-none">
                           <svg width="100%" height="100%" className="text-indigo-900">
@@ -650,12 +626,12 @@ export default function ProfilePage() {
                         </div>
                         
                         <div className="relative">
-                          <h3 className="text-lg font-bold text-gray-800">{groupName}</h3>
-                          <p className="text-xs text-gray-500 mt-1">{resumeIds.length} {resumeIds.length === 1 ? 'resume' : 'resumes'}</p>
+                          <h3 className="text-lg font-bold text-indigo-800">{groupName}</h3>
+                          <p className="text-xs text-indigo-600 mt-1">{resumeIds.length} {resumeIds.length === 1 ? 'resume' : 'resumes'}</p>
                         </div>
                         <button
                           onClick={() => handleDeleteGroup(groupName)}
-                          className="relative text-gray-400 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50"
+                          className="relative text-indigo-400 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50"
                           title="Delete collection"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -666,32 +642,32 @@ export default function ProfilePage() {
                       
                       <div className="p-4 flex-grow">
                         {resumeIds.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {resumeIds.map(resumeId => {
                               const resume = savedResumes.find(r => r.id === resumeId);
                               
                               if (!resume) return null;
                               
                               return (
-                                <div key={resumeId} className="border border-gray-100 rounded-xl p-3 bg-gradient-to-br from-white to-gray-50 flex flex-col justify-between h-full shadow-sm hover:shadow transition duration-300">
-                                  <div className="text-sm font-medium text-indigo-700 mb-1 line-clamp-2">
+                                <div key={resumeId} className="border border-gray-100 rounded-xl p-3 bg-gradient-to-br from-white to-gray-50 flex flex-col justify-between h-full shadow-sm hover:shadow-md transition duration-300">
+                                  <div className="text-sm font-medium text-indigo-700 mb-2 line-clamp-2">
                                     {resume.title || "Untitled Resume"}
                                   </div>
                                   {resume.skills && resume.skills.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 my-1">
+                                    <div className="flex flex-wrap gap-1 mb-2">
                                       {resume.skills.slice(0, 2).map((skill: string, idx: number) => (
-                                        <span key={idx} className="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded-full">
+                                        <span key={idx} className="text-xs bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded-full">
                                           {skill}
                                         </span>
                                       ))}
                                       {resume.skills.length > 2 && (
-                                        <span className="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded-full">
+                                        <span className="text-xs bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded-full">
                                           +{resume.skills.length - 2}
                                         </span>
                                       )}
                                     </div>
                                   )}
-                                  <div className="flex justify-between items-center mt-2 pt-1 border-t border-gray-100">
+                                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
                                     <Link
                                       href={`/main/resume/${resumeId}`}
                                       className="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition"
@@ -763,9 +739,9 @@ export default function ProfilePage() {
               </div>
               
               {savedResumes.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                   {savedResumes.map(resume => (
-                    <div key={resume.id} className="group bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 hover:shadow-xl aspect-square flex flex-col transform transition duration-300 hover:scale-[1.03] hover:-rotate-1">
+                    <div key={resume.id} className="group bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-xl flex flex-col transform transition duration-300 hover:scale-[1.02]">
                       <div className="p-4 flex-grow flex flex-col relative overflow-hidden">
                         {/* Background decoration */}
                         <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-pink-50 to-purple-50 rounded-bl-3xl -mr-10 -mt-10 transform rotate-12 opacity-70 group-hover:opacity-100 transition-opacity"></div>
@@ -800,15 +776,15 @@ export default function ProfilePage() {
                         <div className="flex-grow overflow-hidden flex flex-col relative">
                           {/* Skills */}
                           {resume.skills && resume.skills.length > 0 && (
-                            <div className="mb-1.5">
+                            <div className="mb-2">
                               <div className="flex flex-wrap gap-1">
                                 {resume.skills.slice(0, 3).map((skill: string) => (
-                                  <span key={skill} className="text-[9px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded-full">
+                                  <span key={skill} className="text-xs bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded-full">
                                     {skill}
                                   </span>
                                 ))}
                                 {resume.skills.length > 3 && (
-                                  <span className="text-[9px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded-full">
+                                  <span className="text-xs bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded-full">
                                     +{resume.skills.length - 3}
                                   </span>
                                 )}
@@ -818,19 +794,19 @@ export default function ProfilePage() {
                           
                           {/* Groups/Collections */}
                           {Object.entries(groups).some(([_, ids]) => ids.includes(resume.id)) && (
-                            <div className="mb-1.5">
+                            <div className="mb-2">
                               <div className="flex flex-wrap gap-1">
                                 {Object.entries(groups)
                                   .filter(([_, ids]) => ids.includes(resume.id))
                                   .slice(0, 2)
                                   .map(([groupName]) => (
-                                    <span key={groupName} className="text-[9px] bg-pink-50 text-pink-700 px-1.5 py-0.5 rounded-full">
+                                    <span key={groupName} className="text-xs bg-pink-50 text-pink-700 px-1.5 py-0.5 rounded-full">
                                       {groupName}
                                     </span>
                                   ))
                                 }
                                 {Object.entries(groups).filter(([_, ids]) => ids.includes(resume.id)).length > 2 && (
-                                  <span className="text-[9px] bg-pink-50 text-pink-700 px-1.5 py-0.5 rounded-full">
+                                  <span className="text-xs bg-pink-50 text-pink-700 px-1.5 py-0.5 rounded-full">
                                     +{Object.entries(groups).filter(([_, ids]) => ids.includes(resume.id)).length - 2}
                                   </span>
                                 )}
@@ -840,9 +816,9 @@ export default function ProfilePage() {
                           
                           {/* Experience */}
                           {resume.experienceLevel && (
-                            <div className="text-[10px] text-gray-500 mb-1.5">
+                            <div className="text-xs text-gray-500 mb-2">
                               <span className="inline-flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                 </svg>
                                 {resume.experienceLevel}
@@ -852,12 +828,12 @@ export default function ProfilePage() {
                           
                           {/* Education */}
                           {resume.education && (
-                            <div className="text-[10px] text-gray-500 mb-1.5 truncate">
+                            <div className="text-xs text-gray-500 mb-2 truncate">
                               <span className="inline-flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path d="M12 14l9-5-9-5-9 5 9 5z" />
-                                  <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+                                  <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998a12.078 12.078 0 01.665-6.479L12 14z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998a12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
                                 </svg>
                                 {resume.education}
                               </span>
@@ -868,7 +844,7 @@ export default function ProfilePage() {
                         {/* View button */}
                         <Link
                           href={`/main/resume/${resume.id}`}
-                          className="w-full mt-auto block text-center px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full text-xs hover:from-indigo-700 hover:to-purple-700 transition transform group-hover:scale-105 shadow-sm"
+                          className="w-full mt-auto block text-center px-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg text-sm hover:from-indigo-700 hover:to-purple-700 transition transform group-hover:scale-[1.02] shadow-sm"
                         >
                           View Resume
                         </Link>

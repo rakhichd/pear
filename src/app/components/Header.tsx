@@ -55,8 +55,8 @@ export default function Header() {
                 <Link href="/main/search" className="text-gray-600 hover:text-gray-900">
                   Search
                 </Link>
-                <Link href="/main/saved" className="text-gray-600 hover:text-gray-900">
-                  Saved
+                <Link href="/main/profile" className="text-gray-600 hover:text-gray-900">
+                  Collections
                 </Link>
                 <button
                   onClick={handleSignOut}
@@ -66,10 +66,10 @@ export default function Header() {
                 </button>
                 <Link 
                   href="/main/profile"
-                  className="flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 transition"
                 >
                   <UserCircleIcon className="h-5 w-5" />
-                  {getUserDisplayName()}
+                  <span className="hidden md:inline">{getUserDisplayName()}</span>
                 </Link>
               </>
             ) : (

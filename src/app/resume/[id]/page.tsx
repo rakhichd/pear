@@ -3,18 +3,22 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeftIcon, DocumentTextIcon, TagIcon, ClockIcon, BuildingOfficeIcon, AcademicCapIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, DocumentTextIcon, TagIcon, ClockIcon, BuildingOfficeIcon, AcademicCapIcon, BookmarkIcon } from "@heroicons/react/24/outline";
+import { BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid";
+import { getCurrentUserId, isLoggedIn } from "@/utils/auth-helpers";
 
 export default function ResumePage() {
   const params = useParams();
   const router = useRouter();
-  const resumeId = params.id as string;
+  const resumeId = Array.isArray(params.id) ? params.id[0] : params.id as string;
   
   const [resume, setResume] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
+  const [savingResume, setSavingResume] = useState(false);
   
-  // Fetch the resume data
+  // Fetch the resume data and check if it's saved
   useEffect(() => {
     const fetchResume = async () => {
       if (!resumeId) return;
@@ -31,7 +35,45 @@ export default function ResumePage() {
         }
         
         const data = await response.json();
-        setResume(data.resume);
+        const resumeData = data.resume;
+        setResume(resumeData);
+        
+        // Since we have the resume data, immediately save it to localStorage
+        // so it can be accessed from the profile page
+        try {
+          const savedResumesData = JSON.parse(localStorage.getItem('savedResumesData') || '{}');
+          savedResumesData[resumeId] = {
+            id: resumeId,
+            title: resumeData.title || 'Untitled Resume',
+            skills: extractSkills(resumeData.content || ''),
+            education: 'Not specified',
+            experienceLevel: 'Not specified',
+            companies: ['Not specified'],
+            category: resumeData.category || 'General',
+            content: resumeData.content || ''
+          };
+          localStorage.setItem('savedResumesData', JSON.stringify(savedResumesData));
+        } catch (storageError) {
+          console.error('Error storing resume data in localStorage:', storageError);
+        }
+        
+        // Check if this resume is saved for the current user
+        if (isLoggedIn()) {
+          // First try API
+          try {
+            const userId = getCurrentUserId();
+            const savedResponse = await fetch(`/api/resumes/saved?userId=${userId}`);
+            if (savedResponse.ok) {
+              const savedData = await savedResponse.json();
+              const isSavedResume = savedData.savedResumes.some((saved: any) => saved.id === resumeId);
+              setIsSaved(isSavedResume);
+            }
+          } catch (apiError) {
+            // Fallback to localStorage
+            const savedResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
+            setIsSaved(savedResumes.includes(resumeId));
+          }
+        }
       } catch (err: any) {
         console.error("Error fetching resume:", err);
         setError(`Could not load resume: ${err.message}`);
@@ -74,6 +116,128 @@ export default function ResumePage() {
   // Go back to search results
   const goBack = () => {
     router.back();
+  };
+  
+  // Toggle save resume
+  const toggleSave = async () => {
+    // Force check login status
+    const loggedIn = isLoggedIn();
+    console.log('Login status:', loggedIn);
+    
+    if (!loggedIn) {
+      console.log('Not logged in, redirecting to login page');
+      // Store the current resume ID so we can return to it after login
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('resumeToSaveAfterLogin', resumeId);
+      }
+      router.push('/auth/login');
+      return;
+    }
+    
+    setSavingResume(true);
+    const userId = getCurrentUserId();
+    console.log('Current user ID:', userId);
+    
+    try {
+      if (isSaved) {
+        // Remove from saved
+        try {
+          const response = await fetch(`/api/resumes/saved?userId=${userId}&resumeId=${resumeId}`, {
+            method: 'DELETE'
+          });
+          
+          if (response.ok) {
+            setIsSaved(false);
+            // Also update localStorage as fallback
+            const savedResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
+            localStorage.setItem('savedResumes', JSON.stringify(savedResumes.filter(id => id !== resumeId)));
+          } else {
+            throw new Error('API request failed');
+          }
+        } catch (apiError) {
+          // Fallback to localStorage only
+          const savedResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
+          localStorage.setItem('savedResumes', JSON.stringify(savedResumes.filter(id => id !== resumeId)));
+          setIsSaved(false);
+        }
+      } else {
+        // Add to saved
+        try {
+          const response = await fetch('/api/resumes/saved', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ userId, resumeId })
+          });
+          
+          if (response.ok) {
+            setIsSaved(true);
+            // Also update localStorage as fallback
+            const savedResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
+            if (!savedResumes.includes(resumeId)) {
+              savedResumes.push(resumeId);
+              localStorage.setItem('savedResumes', JSON.stringify(savedResumes));
+            }
+            
+            // Store resume data in localStorage for profile page
+            if (resume) {
+              try {
+                const savedResumesData = JSON.parse(localStorage.getItem('savedResumesData') || '{}');
+                savedResumesData[resumeId] = {
+                  id: resumeId,
+                  title: resume.title || 'Untitled Resume',
+                  skills: extractSkills(resume.content || ''),
+                  content: resume.content,
+                  category: resume.category,
+                  education: 'Not specified',
+                  experienceLevel: 'Not specified',
+                  companies: ['Not specified']
+                };
+                localStorage.setItem('savedResumesData', JSON.stringify(savedResumesData));
+              } catch (storageError) {
+                console.error('Error storing resume data:', storageError);
+              }
+            }
+          } else {
+            throw new Error('API request failed');
+          }
+        } catch (apiError) {
+          // Fallback to localStorage only
+          const savedResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
+          if (!savedResumes.includes(resumeId)) {
+            savedResumes.push(resumeId);
+            localStorage.setItem('savedResumes', JSON.stringify(savedResumes));
+          }
+          
+          // Store resume data in localStorage for profile page
+          if (resume) {
+            try {
+              const savedResumesData = JSON.parse(localStorage.getItem('savedResumesData') || '{}');
+              savedResumesData[resumeId] = {
+                id: resumeId,
+                title: resume.title || 'Untitled Resume',
+                skills: extractSkills(resume.content || ''),
+                content: resume.content,
+                category: resume.category,
+                education: 'Not specified',
+                experienceLevel: 'Not specified',
+                companies: ['Not specified']
+              };
+              localStorage.setItem('savedResumesData', JSON.stringify(savedResumesData));
+            } catch (storageError) {
+              console.error('Error storing resume data:', storageError);
+            }
+          }
+          
+          setIsSaved(true);
+        }
+      }
+    } catch (err) {
+      console.error('Error toggling saved state:', err);
+    } finally {
+      setSavingResume(false);
+    }
   };
   
   return (
@@ -126,28 +290,45 @@ export default function ResumePage() {
           <div className="bg-white rounded-lg shadow overflow-hidden">
             {/* Resume Header */}
             <div className="p-6 border-b border-gray-200">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                {resume.title || "Untitled Resume"}
-              </h1>
-              <div className="flex flex-wrap gap-3 items-center text-sm text-gray-600">
-                <span className="flex items-center">
-                  <DocumentTextIcon className="h-4 w-4 mr-1" />
-                  {resume.category || "General"}
-                </span>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                    {resume.title || "Untitled Resume"}
+                  </h1>
+                  <div className="flex flex-wrap gap-3 items-center text-sm text-gray-600">
+                    <span className="flex items-center">
+                      <DocumentTextIcon className="h-4 w-4 mr-1" />
+                      {resume.category || "General"}
+                    </span>
+                    
+                    {resume.source && (
+                      <span className="flex items-center">
+                        <BuildingOfficeIcon className="h-4 w-4 mr-1" />
+                        {resume.source}
+                      </span>
+                    )}
+                    
+                    {resume.lastUpdated && (
+                      <span className="flex items-center">
+                        <ClockIcon className="h-4 w-4 mr-1" />
+                        Updated: {new Date(resume.lastUpdated).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
                 
-                {resume.source && (
-                  <span className="flex items-center">
-                    <BuildingOfficeIcon className="h-4 w-4 mr-1" />
-                    {resume.source}
-                  </span>
-                )}
-                
-                {resume.lastUpdated && (
-                  <span className="flex items-center">
-                    <ClockIcon className="h-4 w-4 mr-1" />
-                    Updated: {new Date(resume.lastUpdated).toLocaleDateString()}
-                  </span>
-                )}
+                <button 
+                  onClick={toggleSave}
+                  disabled={savingResume}
+                  className={`p-2 rounded-full transition-colors ${isSaved ? 'text-indigo-600 hover:bg-indigo-50' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                  title={isSaved ? "Remove from saved" : "Save resume"}
+                >
+                  {isSaved ? (
+                    <BookmarkSolidIcon className="h-6 w-6" />
+                  ) : (
+                    <BookmarkIcon className="h-6 w-6" />
+                  )}
+                </button>
               </div>
             </div>
             

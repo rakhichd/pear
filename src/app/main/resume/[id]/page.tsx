@@ -5,12 +5,17 @@ import { ArrowLeftIcon, DocumentDuplicateIcon, StarIcon } from '@heroicons/react
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { useState } from 'react';
 
+import { use } from 'react';
+
 export default function ResumeDetailPage({ params }: { params: { id: string } }) {
   const [isSaved, setIsSaved] = useState(false);
   
+  // Properly unwrap params using React.use()
+  const unwrappedParams = use(params);
+  
   // Mock resume data
   const resumeData = {
-    id: params.id,
+    id: unwrappedParams.id,
     title: "Senior Software Engineer Resume",
     author: "Anonymous User",
     lastUpdated: "December 2023",

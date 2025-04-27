@@ -6,7 +6,9 @@ export function isLoggedIn(): boolean {
   if (typeof window === 'undefined') {
     return false;
   }
-  return localStorage.getItem('dummyAuth') === 'true';
+  const isAuthed = localStorage.getItem('dummyAuth') === 'true';
+  console.log('Auth check - isLoggedIn():', isAuthed);
+  return isAuthed;
 }
 
 /**

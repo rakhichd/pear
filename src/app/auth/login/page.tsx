@@ -50,8 +50,15 @@ export default function LoginPage() {
       
       console.log('Successfully logged in with dummy account');
       
-      // Manually redirect to profile page
-      router.push('/main/profile');
+      // Check if there was a resume the user wanted to save before logging in
+      const resumeToSave = localStorage.getItem('resumeToSaveAfterLogin');
+      if (resumeToSave) {
+        localStorage.removeItem('resumeToSaveAfterLogin');
+        router.push(`/resume/${resumeToSave}`);
+      } else {
+        // Manually redirect to profile page
+        router.push('/main/profile');
+      }
     } catch (err: any) {
       console.error('Login error:', err);
       setError('An error occurred. Please refresh and try again.');

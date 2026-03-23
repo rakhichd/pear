@@ -4,34 +4,31 @@ import { doc, getDoc } from 'firebase/firestore';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resumeId = params.id;
+    const { id: resumeId } = await params;
     
     if (!resumeId) {
-      console.log('Resume ID is missing in request');
       return NextResponse.json(
         { error: 'Resume ID is required' },
         { status: 400 }
       );
     }
-    
-    console.log(`Fetching resume with ID: ${resumeId}`);
-    
+
     // Fetch the resume from Firestore
     const resumeRef = doc(db, 'resumes', resumeId);
     let resumeSnap;
 
     try {
       resumeSnap = await getDoc(resumeRef);
-    } catch (fetchError) {
-      console.error(`Error getting document from Firestore: ${fetchError.message}`);
-      throw new Error(`Database fetch error: ${fetchError.message}`);
+    } catch (fetchError: unknown) {
+      const msg = fetchError instanceof Error ? fetchError.message : String(fetchError);
+      console.error(`Error getting document from Firestore: ${msg}`);
+      throw new Error(`Database fetch error: ${msg}`);
     }
     
     if (!resumeSnap.exists()) {
-      console.log(`Resume not found: ${resumeId}`);
       return NextResponse.json(
         { error: 'Resume not found' },
         { status: 404 }
@@ -39,8 +36,7 @@ export async function GET(
     }
     
     const resumeData = resumeSnap.data();
-    console.log(`Resume found. Title: ${resumeData.title}`);
-    
+
     // Format the resume data
     const formattedResumeData = {
       id: resumeSnap.id,
@@ -54,12 +50,14 @@ export async function GET(
     };
     
     return NextResponse.json({ resume: formattedResumeData });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching resume:', error);
-    console.error('Stack trace:', error.stack);
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+    console.error('Stack trace:', stack);
     
     return NextResponse.json(
-      { error: `Failed to fetch resume: ${error.message}` },
+      { error: `Failed to fetch resume: ${message}` },
       { status: 500 }
     );
   }

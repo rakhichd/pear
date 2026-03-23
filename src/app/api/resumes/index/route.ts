@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { indexResume } from '@/lib/pinecone';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { prepareResumeTextForEmbedding, truncateText } from '@/utils/textProcessing';
+import { ResumeData } from '@/types';
 
 // API route for indexing a resume in the vector database
 export async function POST(request: NextRequest) {
@@ -28,16 +28,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const resumeData = resumeSnap.data();
+    const resumeData = resumeSnap.data() as ResumeData;
 
-    // 2. Process resume data to prepare for embedding
-    let resumeText = prepareResumeTextForEmbedding(resumeData);
-    
-    // 3. Truncate if necessary (embedding models often have token limits)
-    resumeText = truncateText(resumeText);
-
-    // 4. Index the resume in Pinecone with embeddings
-    await indexResume(resumeId, resumeData, resumeText);
+    await indexResume(resumeId, resumeData);
 
     return NextResponse.json({
       success: true,

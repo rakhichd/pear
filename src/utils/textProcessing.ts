@@ -7,7 +7,7 @@
  * @param resumeData Resume data object containing various fields
  * @returns Processed text suitable for embedding
  */
-export function prepareResumeTextForEmbedding(resumeData: any): string {
+export function prepareResumeTextForEmbedding(resumeData: Record<string, unknown>): string {
   if (!resumeData) return '';
   
   const parts: string[] = [];
@@ -18,7 +18,7 @@ export function prepareResumeTextForEmbedding(resumeData: any): string {
   
   // Add skills
   if (Array.isArray(resumeData.skills) && resumeData.skills.length > 0) {
-    parts.push(`Skills: ${resumeData.skills.join(', ')}`);
+    parts.push(`Skills: ${(resumeData.skills as string[]).join(', ')}`);
   }
   
   // Add education
@@ -26,11 +26,11 @@ export function prepareResumeTextForEmbedding(resumeData: any): string {
     if (typeof resumeData.education === 'string') {
       parts.push(`Education: ${resumeData.education}`);
     } else if (Array.isArray(resumeData.education)) {
-      const educationTexts = resumeData.education.map((edu: any) => {
-        const eduParts = [];
-        if (edu.degree) eduParts.push(edu.degree);
-        if (edu.institution) eduParts.push(edu.institution);
-        if (edu.year) eduParts.push(edu.year);
+      const educationTexts = (resumeData.education as Record<string, unknown>[]).map((edu) => {
+        const eduParts: string[] = [];
+        if (edu.degree) eduParts.push(String(edu.degree));
+        if (edu.institution) eduParts.push(String(edu.institution));
+        if (edu.year) eduParts.push(String(edu.year));
         return eduParts.join(', ');
       });
       parts.push(`Education: ${educationTexts.join('; ')}`);
@@ -42,12 +42,12 @@ export function prepareResumeTextForEmbedding(resumeData: any): string {
     if (typeof resumeData.experience === 'string') {
       parts.push(`Experience: ${resumeData.experience}`);
     } else if (Array.isArray(resumeData.experience)) {
-      const experienceTexts = resumeData.experience.map((exp: any) => {
-        const expParts = [];
-        if (exp.role) expParts.push(exp.role);
-        if (exp.company) expParts.push(exp.company);
-        if (exp.duration) expParts.push(exp.duration);
-        if (exp.description) expParts.push(exp.description);
+      const experienceTexts = (resumeData.experience as Record<string, unknown>[]).map((exp) => {
+        const expParts: string[] = [];
+        if (exp.role) expParts.push(String(exp.role));
+        if (exp.company) expParts.push(String(exp.company));
+        if (exp.duration) expParts.push(String(exp.duration));
+        if (exp.description) expParts.push(String(exp.description));
         return expParts.join(', ');
       });
       parts.push(`Experience: ${experienceTexts.join('; ')}`);
@@ -64,11 +64,11 @@ export function prepareResumeTextForEmbedding(resumeData: any): string {
     if (typeof resumeData.projects === 'string') {
       parts.push(`Projects: ${resumeData.projects}`);
     } else if (Array.isArray(resumeData.projects)) {
-      const projectTexts = resumeData.projects.map((proj: any) => {
-        const projParts = [];
-        if (proj.name) projParts.push(proj.name);
-        if (proj.description) projParts.push(proj.description);
-        if (proj.technologies) projParts.push(proj.technologies);
+      const projectTexts = (resumeData.projects as Record<string, unknown>[]).map((proj) => {
+        const projParts: string[] = [];
+        if (proj.name) projParts.push(String(proj.name));
+        if (proj.description) projParts.push(String(proj.description));
+        if (proj.technologies) projParts.push(String(proj.technologies));
         return projParts.join(', ');
       });
       parts.push(`Projects: ${projectTexts.join('; ')}`);
@@ -80,7 +80,7 @@ export function prepareResumeTextForEmbedding(resumeData: any): string {
     if (typeof resumeData.certifications === 'string') {
       parts.push(`Certifications: ${resumeData.certifications}`);
     } else if (Array.isArray(resumeData.certifications)) {
-      parts.push(`Certifications: ${resumeData.certifications.join(', ')}`);
+      parts.push(`Certifications: ${(resumeData.certifications as string[]).join(', ')}`);
     }
   }
   

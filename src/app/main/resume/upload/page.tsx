@@ -79,8 +79,10 @@ export default function UploadResume() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to upload resume');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          (errorData as { error?: string }).error || `Upload failed (${response.status})`,
+        );
       }
       
       const data = await response.json();
@@ -90,7 +92,9 @@ export default function UploadResume() {
       
     } catch (err) {
       console.error('Error uploading resume:', err);
-      setError('Failed to upload resume. Please try again.');
+      setError(
+        err instanceof Error ? err.message : 'Failed to upload resume. Please try again.',
+      );
     } finally {
       setUploading(false);
     }
@@ -104,13 +108,13 @@ export default function UploadResume() {
             href="/"
             className="inline-flex items-center text-indigo-600 hover:text-indigo-800"
           >
-            <ArrowLeftIcon className="h-4 w-4 mr-2" />
+            <ArrowLeftIcon className="h-4 w-4 mr-2 shrink-0" width={16} height={16} aria-hidden />
             Back to home
           </Link>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-8">
-          <h1 className="text-3xl font-bold mb-6 text-gray-900">Upload Your Succesful Resume</h1>
+          <h1 className="text-3xl font-bold mb-6 text-gray-900">Upload Your Successful Resume</h1>
           <p className="text-gray-600 mb-8">
             Share your resume to help others in their job search journey.
           </p>
@@ -138,12 +142,17 @@ export default function UploadResume() {
                 <label htmlFor="resume-upload" className="cursor-pointer">
                   {fileName ? (
                     <div className="flex items-center justify-center">
-                      <DocumentTextIcon className="h-8 w-8 text-indigo-500 mr-2" />
+                      <DocumentTextIcon className="h-8 w-8 text-indigo-500 mr-2 shrink-0" width={32} height={32} aria-hidden />
                       <span className="text-gray-700">{fileName}</span>
                     </div>
                   ) : (
                     <>
-                      <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                      <DocumentTextIcon
+                        className="h-12 w-12 text-gray-400 mx-auto mb-3 shrink-0"
+                        width={48}
+                        height={48}
+                        aria-hidden
+                      />
                       <p className="text-gray-600 mb-1">Drag and drop your PDF file here or click to browse</p>
                       <p className="text-gray-500 text-sm">Max file size: 5MB</p>
                     </>

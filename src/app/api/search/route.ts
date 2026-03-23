@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchResumes } from '@/lib/pinecone';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where, limit, doc, getDoc } from 'firebase/firestore';
-import { ResumeData } from '@/types';
+import { collection, doc, getDoc } from 'firebase/firestore';
+import { ResumeData, SearchFilter } from '@/types';
+import { getResumePdfUrl } from '@/lib/resumeUtils';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Search API: Request received');
     const body = await request.json();
     const { searchQuery, filters, page = 1, pageSize = 10 } = body;
-    console.log('Search API: Query:', searchQuery);
-    console.log('Search API: Filters:', filters);
 
     if (!searchQuery && (!filters || Object.keys(filters).length === 0)) {
-      console.log('Search API: Error - No query or filters provided');
       return NextResponse.json(
         { error: 'Search query or filters are required' },
         { status: 400 }
@@ -23,14 +20,11 @@ export async function POST(request: NextRequest) {
     // Convert filters to Pinecone format if needed
     const pineconeFilters = prepareFiltersForPinecone(filters);
 
-    // 1. Search Pinecone for semantic matches using embeddings
-    console.log('Search API: Searching Pinecone');
+    // 1. Search Pinecone (integrated inference embeds the query text)
     let searchResults;
-    
+
     try {
-      console.log(`Search API: Converting query to embedding: "${searchQuery}"`);
       searchResults = await searchResumes(searchQuery, pineconeFilters, pageSize);
-      console.log(`Search API: Pinecone returned ${searchResults.matches?.length || 0} matches`);
     } catch (pineconeError) {
       console.error('Search API: Error searching Pinecone:', pineconeError);
       return NextResponse.json(
@@ -40,7 +34,6 @@ export async function POST(request: NextRequest) {
     }
     
     if (!searchResults.matches || searchResults.matches.length === 0) {
-      console.log('Search API: No matches found in Pinecone');
       return NextResponse.json({
         results: [],
         page,
@@ -51,9 +44,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Get actual resume data from Firestore using the matched IDs
     try {
-      console.log('Search API: Attempting to fetch data from Firestore');
       const resumeIds = searchResults.matches.map(match => match.id);
-      console.log('Search API: Resume IDs:', resumeIds);
       const resumesRef = collection(db, 'resumes');
       
       // Create an array to store resume data promises
@@ -66,13 +57,17 @@ export async function POST(request: NextRequest) {
         .map(docSnap => {
           const data = docSnap.data() as ResumeData;
           const matchData = searchResults.matches.find(match => match.id === docSnap.id);
-          
-          // Use metadata from Pinecone to enhance results if available
-          const pineconeMetadata = matchData?.metadata || {};
-          
+          const id = docSnap.id;
+          const pdfUrl =
+            data.pdfUrl ||
+            getResumePdfUrl(id, data.category, {
+              pdfFilename: data.pdfFilename,
+            });
+
           return {
-            id: docSnap.id,
             ...data,
+            id,
+            pdfUrl,
             // Add the match score from Pinecone
             score: matchData?.score || 0,
             // Add relevance highlights based on the query
@@ -80,8 +75,6 @@ export async function POST(request: NextRequest) {
           };
         });
 
-      console.log(`Search API: Found ${resumes.length} resumes in Firestore`);
-      
       if (resumes.length > 0) {
         return NextResponse.json({
           results: resumes,
@@ -92,34 +85,44 @@ export async function POST(request: NextRequest) {
       }
       
       // If we didn't find any resumes in Firestore, fall back to Pinecone metadata
-      console.log('Search API: No matching resumes found in Firestore, falling back to Pinecone metadata');
     } catch (firestoreError) {
       console.error('Search API: Error fetching from Firestore:', firestoreError);
     }
     
     // Fall back to just returning the standardized metadata from Pinecone
-    console.log('Search API: Falling back to Pinecone metadata only');
     return NextResponse.json({
       results: searchResults.matches.map(match => {
-        const metadata = match.metadata || {};
+        const metadata = (match.metadata ?? {}) as Record<string, unknown>;
+        const str = (k: string) => (typeof metadata[k] === 'string' ? metadata[k] as string : '');
+        const num = (k: string) => (typeof metadata[k] === 'number' ? metadata[k] as number : 0);
+        const strArr = (k: string) => (Array.isArray(metadata[k]) ? metadata[k] as string[] : []);
+        const category = str('category');
+        const pdfUrl =
+          str('pdfUrl') ||
+          getResumePdfUrl(match.id, category || undefined, {
+            pdfFilename: str('pdfFilename') || undefined,
+          });
         return { 
           id: match.id,
           score: match.score,
-          title: metadata.title || '',
-          role: metadata.role || '',
-          experienceLevel: metadata.experienceLevel || 'mid',
-          skills: metadata.skills || [],
-          yearsExperience: metadata.yearsExperience || '',
-          companies: metadata.companies || [],
-          educationLevel: metadata.educationLevel || 'bachelor',
-          education: metadata.education || '',
-          interviews: metadata.interviews || [],
-          offers: metadata.offers || [],
-          contentPreview: metadata.contentPreview || '',
-          author: metadata.author || '',
-          formattingStyle: metadata.formattingStyle || 'professional',
-          createdAt: metadata.createdAt || 0,
-          updatedAt: metadata.updatedAt || 0
+          title: str('title'),
+          role: str('role'),
+          category: category || undefined,
+          experienceLevel: str('experienceLevel') || 'mid',
+          skills: strArr('skills'),
+          yearsExperience: str('yearsExperience'),
+          companies: strArr('companies'),
+          educationLevel: str('educationLevel') || 'bachelor',
+          education: str('education'),
+          interviews: strArr('interviews'),
+          offers: strArr('offers'),
+          contentPreview: str('contentPreview'),
+          author: str('author'),
+          formattingStyle: str('formattingStyle') || 'professional',
+          createdAt: num('createdAt'),
+          updatedAt: num('updatedAt'),
+          pdfUrl,
+          pdfFilename: str('pdfFilename') || undefined,
         };
       }),
       page,
@@ -138,36 +141,37 @@ export async function POST(request: NextRequest) {
 /**
  * Convert frontend filters to Pinecone filter format
  */
-function prepareFiltersForPinecone(filters: any) {
+function prepareFiltersForPinecone(filters: SearchFilter | Record<string, unknown> | undefined) {
   if (!filters || Object.keys(filters).length === 0) {
     return {};
   }
   
-  const pineconeFilters: any = {};
+  const f = filters as Record<string, unknown>;
+  const pineconeFilters: Record<string, unknown> = {};
   
   // Map role filter
-  if (filters.role) {
-    pineconeFilters.role = filters.role;
+  if (typeof f.role === 'string' && f.role) {
+    pineconeFilters.role = f.role;
   }
   
   // Map experience level filter
-  if (filters.experienceLevel) {
-    pineconeFilters.experienceLevel = filters.experienceLevel;
+  if (typeof f.experienceLevel === 'string' && f.experienceLevel) {
+    pineconeFilters.experienceLevel = f.experienceLevel;
   }
   
   // Map education level filter
-  if (filters.educationLevel) {
-    pineconeFilters.educationLevel = filters.educationLevel;
+  if (typeof f.educationLevel === 'string' && f.educationLevel) {
+    pineconeFilters.educationLevel = f.educationLevel;
   }
   
   // Map skills filter (using $in operator for array fields)
-  if (filters.skills && Array.isArray(filters.skills) && filters.skills.length > 0) {
-    pineconeFilters.skills = { $in: filters.skills };
+  if (Array.isArray(f.skills) && f.skills.length > 0) {
+    pineconeFilters.skills = { $in: f.skills };
   }
   
   // Map companies filter
-  if (filters.companies && Array.isArray(filters.companies) && filters.companies.length > 0) {
-    pineconeFilters.companies = { $in: filters.companies };
+  if (Array.isArray(f.companies) && f.companies.length > 0) {
+    pineconeFilters.companies = { $in: f.companies };
   }
   
   // Filter by isPublic: true for security

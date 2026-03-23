@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 
 export const config = {
   api: {
@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
     const targetRole = formData.get('targetRole') as string;
     const targetCompany = formData.get('targetCompany') as string;
     const careerLevel = formData.get('careerLevel') as string;
-    const additionalContext = formData.get('additionalContext') as string;
     
     if (!file || !targetRole || !careerLevel) {
       return NextResponse.json(
@@ -34,7 +33,6 @@ export async function POST(request: NextRequest) {
     const storageRef = ref(storage, `feedback-requests/${feedbackId}/${file.name}`);
     
     await uploadBytesResumable(storageRef, new Uint8Array(fileBuffer));
-    const downloadURL = await getDownloadURL(storageRef);
 
     // In a real application, you would:
     // 1. Extract text from the PDF
@@ -42,7 +40,7 @@ export async function POST(request: NextRequest) {
     // 3. Generate feedback based on target role, career level, etc.
     
     // For this example, we'll provide mock feedback
-    const feedback = generateMockFeedback(targetRole, careerLevel, targetCompany, additionalContext);
+    const feedback = generateMockFeedback(targetRole, careerLevel, targetCompany);
 
     return NextResponse.json({
       success: true,
@@ -61,8 +59,7 @@ export async function POST(request: NextRequest) {
 function generateMockFeedback(
   targetRole: string, 
   careerLevel: string, 
-  targetCompany: string = '',
-  additionalContext: string = ''
+  targetCompany: string = ''
 ): string {
   const careerLevelMap: Record<string, string> = {
     'entry': 'entry-level',

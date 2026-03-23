@@ -2,6 +2,8 @@
 
 :root {
   --background: #f9fafb;
+  /* Always use dark text: the UI is light-theme (white/gray cards). A dark OS theme used to
+     flip --foreground to near-white here, which made inherited text invisible on white. */
   --foreground: #111827;
   --primary: #4f46e5;
   --primary-hover: #4338ca;
@@ -20,19 +22,15 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    --foreground: #f1f5f9;
-    --primary: #6366f1;
-    --primary-hover: #4f46e5;
-    --secondary: #0ea5e9;
-    --accent: #0ea5e9;
-  }
-}
-
 body {
   background: var(--background);
-  color: var(--foreground);
+  /* Explicit contrast — do not use a theme variable that can go light-on-light */
+  color: #111827;
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* HTML snippets from resumes (dangerouslySetInnerHTML) — keep readable on white cards */
+.resume-html-content,
+.resume-html-content :where(p, li, h1, h2, h3, h4, strong, span, div) {
+  color: #111827;
 }

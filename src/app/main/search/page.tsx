@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon } from "@heroicons/react/24/outline";
 import { processSearchQuery } from "@/utils/textProcessing";
+import type { SearchResultItem } from "@/types";
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<SearchResultItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   
   const [filters, setFilters] = useState({
@@ -45,7 +46,7 @@ export default function SearchPage() {
           acc[key] = value;
         }
         return acc;
-      }, {} as Record<string, any>);
+      }, {} as Record<string, string | string[]>);
       console.log("Filter payload:", filterPayload);
       
       // Call the search API
@@ -231,9 +232,9 @@ export default function SearchPage() {
               >
                 <option value="">Any Education</option>
                 <option value="High School">High School</option>
-                <option value="Associate">Associate's Degree</option>
-                <option value="Bachelor">Bachelor's Degree</option>
-                <option value="Master">Master's Degree</option>
+                <option value="Associate">Associate&apos;s Degree</option>
+                <option value="Bachelor">Bachelor&apos;s Degree</option>
+                <option value="Master">Master&apos;s Degree</option>
                 <option value="PhD">PhD</option>
               </select>
             </div>

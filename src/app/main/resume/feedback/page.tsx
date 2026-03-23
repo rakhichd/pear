@@ -1,12 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeftIcon, DocumentTextIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 
 export default function ResumeFeedback() {
-  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -155,7 +153,7 @@ export default function ResumeFeedback() {
             <div className="mb-6">
               <h2 className="text-xl font-semibold mb-4">Upload Your Resume</h2>
               <p className="text-gray-600 mb-6">
-                Get detailed feedback on your resume's content, format, and effectiveness for your target role.
+                Get detailed feedback on your resume&apos;s content, format, and effectiveness for your target role.
               </p>
             </div>
 

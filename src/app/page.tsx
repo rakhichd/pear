@@ -49,7 +49,7 @@ export default function Home() {
               onClick={() => setSidebarOpen(false)}
               className="p-2 rounded-md hover:bg-gray-100"
             >
-              <XMarkIcon className="h-6 w-6 text-gray-500" />
+              <XMarkIcon className="h-6 w-6 text-gray-500 shrink-0" width={24} height={24} aria-hidden />
             </button>
           </div>
           
@@ -61,7 +61,7 @@ export default function Home() {
                 className="flex items-center gap-3 p-3 rounded-md hover:bg-indigo-50 text-gray-700 hover:text-indigo-600 transition-colors"
                 onClick={() => setSidebarOpen(false)}
               >
-                <ArrowUpTrayIcon className="h-5 w-5" />
+                <ArrowUpTrayIcon className="h-5 w-5 shrink-0" width={20} height={20} aria-hidden />
                 <span className="font-medium">Upload Resume</span>
               </Link>
               <Link 
@@ -69,7 +69,7 @@ export default function Home() {
                 className="flex items-center gap-3 p-3 rounded-md hover:bg-indigo-50 text-gray-700 hover:text-indigo-600 transition-colors"
                 onClick={() => setSidebarOpen(false)}
               >
-                <DocumentTextIcon className="h-5 w-5" />
+                <DocumentTextIcon className="h-5 w-5 shrink-0" width={20} height={20} aria-hidden />
                 <span className="font-medium">Get Resume Feedback</span>
               </Link>
             </nav>
@@ -83,7 +83,7 @@ export default function Home() {
                 className="flex items-center gap-3 p-3 rounded-md hover:bg-indigo-50 text-gray-700 hover:text-indigo-600 transition-colors"
                 onClick={() => setSidebarOpen(false)}
               >
-                <UserIcon className="h-5 w-5" />
+                <UserIcon className="h-5 w-5 shrink-0" width={20} height={20} aria-hidden />
                 <span className="font-medium">Log in</span>
               </Link>
               <Link 
@@ -108,7 +108,7 @@ export default function Home() {
               className="p-2 rounded-md hover:bg-indigo-50"
               onClick={() => setSidebarOpen(true)}
             >
-              <Bars3Icon className="h-6 w-6 text-indigo-600" />
+              <Bars3Icon className="h-6 w-6 text-indigo-600 shrink-0" width={24} height={24} aria-hidden />
             </button>
             {/* Authentication buttons always visible */}
             <div className="flex gap-2">
@@ -140,7 +140,7 @@ export default function Home() {
           {/* Search Box */}
           <div className="relative max-w-2xl mx-auto">
             <div className="flex items-center border-2 border-gray-300 rounded-full overflow-hidden bg-white shadow-sm hover:shadow-md transition">
-              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 ml-4" />
+              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 ml-4 shrink-0" width={20} height={20} aria-hidden />
               <input 
                 type="text"
                 placeholder="Search by role, skills, company, background..."

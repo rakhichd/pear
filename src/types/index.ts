@@ -21,6 +21,8 @@ export type ResumeData = {
   formattingStyle?: 'professional' | 'creative' | 'minimalist';
   pdfUrl?: string;
   pdfFilename?: string;
+  /** Job / dataset category (folder under public/pdfs/resumes) */
+  category?: string;
 };
 
 export type UserData = {
@@ -38,7 +40,26 @@ export type SearchFilter = {
   role?: string;
   skills?: string[];
   education?: string;
+  educationLevel?: string;
   experienceLevel?: string;
   companies?: string[];
   query?: string;
+};
+
+/** API search hit (Firestore doc + optional Pinecone fields) */
+export type SearchResultItem = Partial<ResumeData> & {
+  id: string;
+  score?: number;
+  highlights?: string[];
+  /** Extra fields sometimes returned from Pinecone / legacy APIs */
+  experience?: string;
+  category?: string;
+  source?: string;
+  metadata?: { title?: string; content?: string; category?: string };
+};
+
+/** Resume detail view (API may omit some ResumeData fields) */
+export type ResumeDetail = Partial<ResumeData> & {
+  category?: string;
+  source?: string;
 }; 

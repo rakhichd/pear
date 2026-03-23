@@ -4,13 +4,17 @@ import Link from 'next/link';
 import { ArrowLeftIcon, DocumentDuplicateIcon, StarIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { useState } from 'react';
+import { useParams } from 'next/navigation';
 
-export default function ResumeDetailPage({ params }: { params: { id: string } }) {
+export default function ResumeDetailPage() {
+  const params = useParams();
+  const rawId = params?.id;
+  const resumeId = typeof rawId === 'string' ? rawId : '';
   const [isSaved, setIsSaved] = useState(false);
   
   // Mock resume data
   const resumeData = {
-    id: params.id,
+    id: resumeId,
     title: "Senior Software Engineer Resume",
     author: "Anonymous User",
     lastUpdated: "December 2023",
@@ -195,7 +199,10 @@ export default function ResumeDetailPage({ params }: { params: { id: string } })
           
           {/* Resume Content */}
           <div className="p-6">
-            <div dangerouslySetInnerHTML={{ __html: resumeData.content }} />
+            <div
+              className="resume-html-content max-w-none text-base leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: resumeData.content }}
+            />
           </div>
         </div>
         

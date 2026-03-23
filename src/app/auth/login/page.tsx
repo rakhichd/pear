@@ -22,16 +22,14 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginFormValues>();
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const onSubmit = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
       // This is a mockup implementation
       // In a real application, you would use Firebase Authentication
-      
-      console.log('Logging in with:', data);
-      
+
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
@@ -146,7 +144,7 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center text-sm">
             <p className="text-gray-600">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/auth/signup" className="text-indigo-600 hover:text-indigo-800 font-medium">
                 Sign up
               </Link>

@@ -1,85 +1,123 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getApp } from 'firebase/app';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import type { ResumeData } from '@/types';
+import pdfParse from 'pdf-parse';
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    
-    // Extract file and metadata from the request
-    const file = formData.get('file') as File;
-    const title = formData.get('title') as string;
-    const role = formData.get('role') as string;
-    const company = formData.get('company') as string;
-    const experiences = formData.get('experiences') as string;
-    const education = formData.get('education') as string;
-    const skills = formData.get('skills') as string;
-    const result = formData.get('result') as string;
-    
-    if (!file || !title || !role || !skills || !result) {
+
+    const file = formData.get('file');
+    const roleRaw = formData.get('role');
+    const resultRaw = formData.get('result');
+    const titleRaw = formData.get('title');
+    const skillsRaw = formData.get('skills');
+
+    if (!(file instanceof File)) {
+      return NextResponse.json({ error: 'A PDF file is required' }, { status: 400 });
+    }
+
+    const role = typeof roleRaw === 'string' ? roleRaw.trim() : '';
+    const result = typeof resultRaw === 'string' ? resultRaw.trim() : '';
+
+    if (!role || !result) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
+        { error: 'Role and result (interviews/offers) are required' },
+        { status: 400 },
       );
     }
 
-    // Generate a unique ID for the resume
+    if (file.type && file.type !== 'application/pdf') {
+      return NextResponse.json({ error: 'Only PDF files are allowed' }, { status: 400 });
+    }
+
     const resumeId = crypto.randomUUID();
-    
-    // Get file buffer from the File object
-    const fileBuffer = await file.arrayBuffer();
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload to Firebase Storage
-    const storage = getStorage();
+    let extractedText = '';
+    try {
+      const parsed = await pdfParse(fileBuffer);
+      extractedText = (parsed.text || '').trim();
+    } catch (parseErr) {
+      console.warn('PDF text extraction failed:', parseErr);
+      extractedText = '';
+    }
+
+    const title =
+      (typeof titleRaw === 'string' && titleRaw.trim()) ||
+      `${role} resume`;
+
+    const skillsFromForm =
+      typeof skillsRaw === 'string' && skillsRaw.trim()
+        ? skillsRaw.split(',').map((s) => s.trim()).filter(Boolean)
+        : [];
+
+    const offers = result
+      .split(/[,;\n]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const storage = getStorage(getApp());
     const storageRef = ref(storage, `resumes/${resumeId}/${file.name}`);
-    
-    const uploadTask = await uploadBytesResumable(storageRef, new Uint8Array(fileBuffer));
-    const downloadURL = await getDownloadURL(uploadTask.ref);
 
-    // Store metadata in Firestore
-    const resumeData = {
+    await uploadBytes(storageRef, fileBuffer, { contentType: 'application/pdf' });
+    const downloadURL = await getDownloadURL(storageRef);
+
+    const now = Date.now();
+    const resumeData: ResumeData = {
       id: resumeId,
       title,
-      fileName: file.name,
-      fileURL: downloadURL,
+      author: 'Community',
+      lastUpdated: new Date().toISOString(),
+      education: '',
+      yearsExperience: '',
+      skills: skillsFromForm,
+      offers,
+      interviews: [],
+      content: extractedText || `[Uploaded PDF: ${file.name}. Text could not be extracted.]`,
+      createdAt: now,
+      updatedAt: now,
+      isPublic: true,
       role,
-      company,
-      experiences,
-      education,
-      skills: skills.split(',').map(skill => skill.trim()),
-      result,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      experienceLevel: 'mid',
+      companies: [],
+      educationLevel: 'bachelor',
+      formattingStyle: 'professional',
+      pdfUrl: downloadURL,
+      pdfFilename: file.name,
+      category: 'COMMUNITY',
     };
 
     await setDoc(doc(db, 'resumes', resumeId), resumeData);
 
-    // Trigger the resume indexing process
-    await fetch(`${request.nextUrl.origin}/api/resumes/index`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ resumeId }),
-    });
+    const indexUrl = new URL('/api/resumes/index', request.nextUrl.origin);
+    try {
+      const indexRes = await fetch(indexUrl.toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resumeId }),
+      });
+      if (!indexRes.ok) {
+        const errText = await indexRes.text();
+        console.error('Pinecone index returned', indexRes.status, errText);
+      }
+    } catch (indexErr) {
+      console.error('Pinecone indexing failed (upload still saved):', indexErr);
+    }
 
     return NextResponse.json({
       success: true,
       message: 'Resume uploaded successfully',
-      resumeId
+      resumeId,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error uploading resume:', error);
-    return NextResponse.json(
-      { error: 'Failed to upload resume' },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : 'Failed to upload resume';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

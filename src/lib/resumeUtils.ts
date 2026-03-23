@@ -1,49 +1,76 @@
-import { Resume } from '@/types/resume';
+import type { SearchResultItem } from '@/types';
+
+export type PdfUrlOptions = {
+  pdfUrl?: string;
+  pdfFilename?: string;
+};
 
 /**
- * Generate the public URL for a resume PDF
- * @param resumeId The ID of the resume
- * @param category The category of the resume (optional)
- * @returns The public URL for the resume PDF
+ * Build the public URL for a resume PDF under /public/pdfs/resumes/.
+ *
+ * CSV-ingested rows use document IDs like `resume-17915015` while files on disk are
+ * `{Category}/17915015.pdf` — we strip the `resume-` prefix for the filename unless
+ * `pdfUrl` / `pdfFilename` is already stored on the document.
  */
-export function getResumePdfUrl(resumeId: string, category?: string): string {
-  // Handle Winston's resume as a special case
+export function getResumePdfUrl(
+  resumeId: string,
+  category?: string,
+  options?: PdfUrlOptions,
+): string {
   if (resumeId === 'winston') {
     return '/pdfs/resumes/PERSONAL/Winston_s_Resume (9).pdf';
   }
-  
-  // If we have a category, we can directly construct the path
-  if (category) {
-    return `/pdfs/resumes/${category}/${resumeId}.pdf`;
+
+  if (options?.pdfUrl) {
+    const u = options.pdfUrl.trim();
+    return u.startsWith('/') ? u : `/${u}`;
   }
-  
-  // If we don't have a category, we need to guess it
-  // Note: In production, we should store the category with the resume data
-  return `/pdfs/resumes/${resumeId}.pdf`;
+
+  if (options?.pdfFilename) {
+    const name = options.pdfFilename.trim();
+    if (category) {
+      return `/pdfs/resumes/${encodePathSegment(category)}/${encodePathSegment(name)}`;
+    }
+    return `/pdfs/resumes/${encodePathSegment(name)}`;
+  }
+
+  // Infer filename from id: `resume-<stem>` → `<stem>.pdf` (matches CSV numeric IDs)
+  const stem = resumeId.startsWith('resume-') ? resumeId.slice('resume-'.length) : resumeId;
+  const fileName = stem.endsWith('.pdf') ? stem : `${stem}.pdf`;
+
+  if (category) {
+    return `/pdfs/resumes/${encodePathSegment(category)}/${encodePathSegment(fileName)}`;
+  }
+
+  return `/pdfs/resumes/${encodePathSegment(fileName)}`;
+}
+
+function encodePathSegment(segment: string): string {
+  return encodeURIComponent(segment);
 }
 
 /**
  * Update resume data with PDF URLs
- * @param resumes Array of resume objects
- * @returns The same array with pdfUrl properties added
  */
-export function addPdfUrlsToResumes(resumes: Resume[]): Resume[] {
-  return resumes.map(resume => {
-    // Extract category from the id if available (format: CATEGORY/ID)
-    let category: string | undefined;
+export function addPdfUrlsToResumes(resumes: SearchResultItem[]): SearchResultItem[] {
+  return resumes.map((resume) => {
+    let category: string | undefined = resume.category;
     let pureId = resume.id;
-    
+
     if (resume.category) {
       category = resume.category;
-    } else if (resume.id && resume.id.includes('/')) {
+    } else if (resume.id?.includes('/')) {
       const parts = resume.id.split('/');
       category = parts[0];
-      pureId = parts[1];
+      pureId = parts[1] ?? resume.id;
     }
-    
+
     return {
       ...resume,
-      pdfUrl: getResumePdfUrl(pureId, category)
+      pdfUrl: getResumePdfUrl(pureId, category, {
+        pdfUrl: resume.pdfUrl,
+        pdfFilename: resume.pdfFilename,
+      }),
     };
   });
-} 
+}
